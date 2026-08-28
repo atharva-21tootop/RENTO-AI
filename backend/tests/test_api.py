@@ -56,12 +56,17 @@ def _auth_headers(name="My PHC", code="PHC-A"):
     return {"Authorization": f"Bearer {token}"}
 
 
-def _make_test_image_bytes(width=600, height=600):
-    img = np.random.RandomState(42).randint(50, 200, (height, width, 3), dtype=np.uint8)
-    cv2.circle(img, (300, 300), 200, (0, 80, 160), -1)
-    cv2.circle(img, (300, 300), 100, (0, 40, 120), -1)
-    cv2.rectangle(img, (50, 50), (150, 150), (200, 100, 50), -1)
-    cv2.putText(img, "FUNDUS", (200, 300), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
+def _make_test_image_bytes(width=800, height=800):
+    """Synthetic fundus-like image: black corners, large reddish disk, texture."""
+    rng = np.random.RandomState(42)
+    img = np.zeros((height, width, 3), dtype=np.uint8)
+    cv2.circle(img, (width // 2, height // 2), 340, (35, 80, 170), -1)
+    cv2.circle(img, (width // 2, height // 2), 220, (45, 95, 195), -1)
+    cv2.circle(img, (width // 2, height // 2), 120, (60, 110, 220), -1)
+    mask = np.zeros((height, width, 1), np.uint8)
+    cv2.circle(mask, (width // 2, height // 2), 340, 255, -1)
+    noise = rng.randint(-28, 28, (height, width, 3), dtype=np.int16)
+    img = np.clip(img.astype(np.int16) + noise * (mask.astype(bool).astype(np.int16)), 0, 255).astype(np.uint8)
     _, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
 
@@ -609,3 +614,72 @@ def test_heatmap_url_is_signed():
     url = analyze["explanation"]["heatmap_url"]
     assert url.startswith("/storage/heatmaps/") and "sig=" in url
     assert client.get(url).status_code == 200
+
+
+# ── Fundus plausibility gate (check_fundus_structure) ──
+
+def _make_non_fundus_bytes():
+    img = np.full((600, 600, 3), 225, np.uint8)
+    cv2.circle(img, (200, 200), 60, (30, 120, 240), -1)
+    cv2.rectangle(img, (300, 300), (360, 360), (30, 180, 50), -1)
+    cv2.circle(img, (450, 150), 40, (40, 40, 40), -1)
+    _, buf = cv2.imencode(".jpg", img)
+    return buf.tobytes()
+
+
+def test_quality_good_image_includes_fundus_structure():
+    p = _create_patient()
+    s = _create_screening(p["patient_id"])
+    _upload_image(s["screening_id"])
+    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=_auth_headers()).json()
+    assert data["status"] == "good"
+    assert data["checks"]["fundus_structure"] is True
+
+
+def test_quality_rejects_non_fundus_image():
+    p = _create_patient()
+    s = _create_screening(p["patient_id"])
+    _upload_image(s["screening_id"], _make_non_fundus_bytes())
+    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=_auth_headers()).json()
+    assert data["status"] == "poor"
+    assert data["action"] == "recapture"
+    assert data["checks"]["fundus_structure"] is False
+    assert "Image does not appear to be a retinal fundus photograph" in data["issues"]
+
+
+def test_analyze_rejects_non_fundus_without_running_inference(monkeypatch):
+    def _explode(*a, **k):
+        raise AssertionError("run_inference must never be called for a non-fundus image")
+    monkeypatch.setattr("app.features.screenings.routes.run_inference", _explode)
+
+    p = _create_patient()
+    s = _create_screening(p["patient_id"])
+    _upload_image(s["screening_id"], _make_non_fundus_bytes())
+    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers()).json()
+
+    assert result["status"] == "quality_failed"
+    assert result["risk"]["level"] == "recapture"
+    assert "prediction" not in result
+    assert "explanation" not in result
+    stored = get_db().screenings.find_one({"screening_id": s["screening_id"]})
+    assert stored["status"] == "quality_failed"
+    assert stored["image_quality"]["checks"]["fundus_structure"] is False
+    assert stored.get("prediction") is None
+
+
+def test_red_ball_on_dark_heuristic_boundary():
+    # A uniformly dark, perfectly round red object is indistinguishable from a
+    # fundus by these plausibility heuristics (dark corners, red-dominant,
+    # round), so fundus_structure passes by design; it is still rejected
+    # downstream by the blur/brightness checks. Pins current behaviour so any
+    # future tightening of check_fundus_structure is noticed here.
+    img = np.zeros((600, 600, 3), np.uint8)
+    cv2.circle(img, (300, 300), 200, (20, 40, 215), -1)
+    _, buf = cv2.imencode(".jpg", img)
+    p = _create_patient()
+    s = _create_screening(p["patient_id"])
+    _upload_image(s["screening_id"], buf.tobytes())
+    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=_auth_headers()).json()
+    assert data["checks"]["fundus_structure"] is True
+    assert data["status"] == "poor"
+    assert data["issues"]
