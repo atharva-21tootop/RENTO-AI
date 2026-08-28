@@ -1,0 +1,35 @@
+# ---------- Dependencies / build artifacts ----------
+node_modules/
+Frontend/node_modules/
+Frontend/.next/
+Frontend/.turbo/
+*.tsbuildinfo
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---------- Environments — never commit real secrets ----------
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# ---------- Runtime data (uploaded images / heatmaps) ----------
+backend/storage/uploads/
+backend/storage/heatmaps/
+
+# ---------- ML model weights (large binaries — ship via releases) ----------
+*.pth
+*.pt
+
+# ---------- Tooling / OS ----------
+.DS_Store
+Thumbs.db
+.sisyphus/
+opencode-log.md
+.opencode/
+graphify-out/
+._graphify-config.yaml

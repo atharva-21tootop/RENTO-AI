@@ -1,0 +1,6 @@
+Actual / Predicted,No DR,Mild DR,Moderate DR,Severe DR,Proliferative DR
+No DR,348,11,2,0,0
+Mild DR,4,54,13,1,2
+Moderate DR,3,26,142,21,8
+Severe DR,1,0,10,18,10
+Proliferative DR,0,7,11,10,31

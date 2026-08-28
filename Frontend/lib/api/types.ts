@@ -1,0 +1,87 @@
+export interface Patient {
+  id: string;
+  patientId: string;
+  name: string;
+  age: number;
+  gender: 'Male' | 'Female' | 'Other';
+  diabetesDurationYears: number;
+  contactNumber?: string;
+  createdAt: string;
+}
+
+export interface PHCProfile {
+  id: string;
+  name: string;
+  code: string;
+  state: string;
+  district: string;
+  address: string;
+  contactNumber: string;
+  healthcareWorkerName: string;
+}
+
+export interface ImageQualityCheck {
+  status: 'good' | 'insufficient';
+  score: number; // 0 - 100
+  checks: {
+    resolution: boolean;
+    brightness: boolean;
+    contrast: boolean;
+    blur: boolean;
+    fundusVisibility: boolean;
+  };
+  issues?: string[];
+  message: string;
+}
+
+export type DRGrade = 0 | 1 | 2 | 3 | 4;
+
+export interface DRPrediction {
+  grade: DRGrade;
+  label: 'No DR' | 'Mild DR' | 'Moderate DR' | 'Severe DR' | 'Proliferative DR';
+  description: string;
+  confidence: number; // percentage e.g. 91.5
+}
+
+export type RiskLevel = 'LOW RISK' | 'MONITOR' | 'HIGH RISK' | 'URGENT' | 'RECAPTURE';
+
+export interface RiskAssessment {
+  level: RiskLevel;
+  recommendation: string;
+  actionRequired: string;
+  followUpTimeframe: string;
+}
+
+export interface ScreeningResult {
+  screeningId: string;
+  patientId: string;
+  patientName: string;
+  patientAge: number;
+  patientGender: string;
+  diabetesDurationYears: number;
+  date: string;
+  eye: 'left' | 'right';
+  imageUrl: string;
+  heatmapUrl?: string;
+  imageQuality: ImageQualityCheck;
+  prediction?: DRPrediction;
+  risk?: RiskAssessment;
+  status: 'completed' | 'quality_failed' | 'pending';
+}
+
+export interface ScreeningReport extends ScreeningResult {
+  phcName: string;
+  phcCode: string;
+  district: string;
+  state: string;
+  healthcareWorkerName: string;
+  reportGeneratedAt: string;
+}
+
+export interface ScreeningFilters {
+  search?: string;
+  riskLevel?: string;
+  drGrade?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
