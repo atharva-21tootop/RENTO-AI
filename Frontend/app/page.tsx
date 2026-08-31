@@ -135,7 +135,7 @@ export default function HomePage() {
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
                 <div className="absolute bottom-5 left-5 right-5">
-                  <p className="font-display text-xl font-bold text-white">Specialists shouldn't be the only place</p>
+                  <p className="font-display text-xl font-bold text-white">Specialists shouldn&apos;t be the only place</p>
                   <p className="mt-1 text-sm text-white/80">where screening begins.</p>
                 </div>
               </div>

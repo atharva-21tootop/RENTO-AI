@@ -32,7 +32,7 @@ export default function PhcJourney() {
         <SectionHeading
           eyebrow="Built for PHCs"
           title={
-            <span className="text-white">Built for where specialists aren't.</span>
+            <span className="text-white">Built for where specialists aren&apos;t.</span>
           }
           lede="Primary Health Centres are already closer to patients than any specialist ever will be. AI helps them screen effectively — and refer only when it matters."
           className="[&_p]:text-white/70"
