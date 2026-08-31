@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: netracare-backend
+    env: python
+    rootDir: backend
+    buildCommand: "pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_NAME
+        value: dr_screening
+      - key: COOKIE_SECURE
+        value: "true"
