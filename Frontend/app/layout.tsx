@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' });
 
 export const metadata: Metadata = {
-  title: 'RetinoCare PHC - AI Diabetic Retinopathy Screening',
+  title: 'NetraCare PHC - AI Diabetic Retinopathy Screening',
   description:
     'AI-powered Diabetic Retinopathy early screening and specialist referral system for Primary Health Centres in rural India.',
 };

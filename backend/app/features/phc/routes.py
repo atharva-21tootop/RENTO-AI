@@ -8,9 +8,11 @@ router = APIRouter()
 
 @router.get("/profile")
 def get_phc_profile(user: dict = Depends(get_current_user)):
-    return get_profile(user.get("phcId"))
+    phc_id = user.get("phc_id") or user.get("phcId")
+    return get_profile(phc_id)
 
 
 @router.put("/profile")
 def update_phc_profile(data: PHCProfileUpdate, user: dict = Depends(get_current_user)):
-    return update_profile(user.get("phcId"), data)
+    phc_id = user.get("phc_id") or user.get("phcId")
+    return update_profile(phc_id, data)

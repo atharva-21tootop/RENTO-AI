@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     logger.info("DR Screening API stopped")
 
 
-app = FastAPI(title="DR Screening API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="NetraCare DR Screening API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

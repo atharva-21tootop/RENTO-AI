@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f6f3ed; /* warm paper — primary light background */
+  --foreground: #132c3d;
 }
 
 /* Public-site display font (design.md §2.2) — use Spaces Grotesk for headlines */
@@ -66,6 +66,64 @@ body {
     stroke-dashoffset: 0;
     animation: none;
   }
+}
+
+/* ── CSS 3D depth (design visual upgrade — no WebGL) ──────────────────────── */
+/* Gives a slight 3D tilt. Used on hero retina, bento card visuals, etc. */
+.tilt-3d {
+  transform: perspective(1100px) rotateX(4deg) rotateY(-6deg);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.tilt-3d.tilt-3d-flat {
+  transform: none;
+}
+
+/* A 3D "card plane" that pops toward the viewer on hover. */
+.card-plane {
+  transform: perspective(1100px) translateZ(0);
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+}
+.card-plane:hover {
+  transform: perspective(1100px) rotateX(2deg) rotateY(-2deg) translateZ(18px);
+}
+.card-plane > * {
+  transform: translateZ(12px);
+}
+
+/* Soft layered shadow used under tilted/floating media. */
+.depth-shadow {
+  box-shadow:
+    0 4px 6px -2px rgba(7, 26, 43, 0.10),
+    0 16px 32px -12px rgba(7, 26, 43, 0.35),
+    0 40px 80px -24px rgba(7, 26, 43, 0.35);
+}
+
+/* Warm editorial section background (#EAF4F1 secondary). */
+.bg-warm-mint {
+  background-color: #eaf4f1;
+}
+
+/* Subtle floating animation for 3D-ish hero objects. */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+/* Image treatment: dark gradient scrim so type stays readable over photos. */
+.img-scrim {
+  position: relative;
+}
+.img-scrim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 26, 43, 0.05) 0%, rgba(7, 26, 43, 0.75) 100%);
+  pointer-events: none;
 }
 
 /* Custom Print Styles for Reports */

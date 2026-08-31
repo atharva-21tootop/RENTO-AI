@@ -52,7 +52,8 @@ def create_screening_endpoint(data: ScreeningCreate, user: dict = Depends(get_cu
         raise HTTPException(status_code=404, detail={"code": "PATIENT_NOT_FOUND", "message": "Patient not found"})
     if data.eye not in ["left", "right"]:
         raise HTTPException(status_code=422, detail={"code": "INVALID_EYE", "message": "Eye must be 'left' or 'right'"})
-    screening = create_screening(data.patient_id, data.eye)
+    phc_id = user.get("phc_id") or user.get("phcId")
+    screening = create_screening(data.patient_id, data.eye, phc_id=phc_id)
     return _enrich_screening(screening)
 
 
@@ -209,7 +210,9 @@ def list_screenings_endpoint(
     date_to: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
+    user: dict = Depends(get_current_user),
 ):
+    phc_id = user.get("phc_id") or user.get("phcId")
     items, total = list_screenings(
         patient_id=patient_id,
         risk=risk,
@@ -218,6 +221,7 @@ def list_screenings_endpoint(
         date_to=date_to,
         page=page,
         limit=limit,
+        phc_id=phc_id,
     )
     patient_ids = [item["patient_id"] for item in items]
     patient_map = get_patients_batch(patient_ids)

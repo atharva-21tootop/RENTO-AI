@@ -47,7 +47,7 @@ export default function ProblemSolution() {
 
           {/* Solution path (right) */}
           <div className={`space-y-4 transition-all duration-700 delay-300 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-electric">With RetinoCare</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-electric">With NetraCare</p>
             {[
               { n: '1', label: 'PHC healthcare worker captures retinal image' },
               { n: '2', label: 'AI analyzes in seconds — risk flagged instantly' },

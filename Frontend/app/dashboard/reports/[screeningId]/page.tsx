@@ -93,7 +93,7 @@ export default function ScreeningReportPage() {
                 <Eye className="w-5 h-5" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-slate-900">
-                RetinoCare PHC Screening
+                NetraCare PHC Screening
               </span>
             </div>
             <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">

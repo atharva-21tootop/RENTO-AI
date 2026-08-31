@@ -49,7 +49,7 @@ export default function HeaderNav({ user }: HeaderNavProps) {
               <Eye className="w-5 h-5" />
             </div>
             <span className="font-bold text-sm text-slate-900 tracking-tight">
-              Retino<span className="text-teal-600">Care</span> PHC
+              Netra<span className="text-teal-600">Care</span> PHC
             </span>
           </div>
 

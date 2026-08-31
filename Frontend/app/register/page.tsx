@@ -13,7 +13,7 @@ export default function RegisterPage() {
               <Eye className="w-5 h-5" />
             </div>
             <span className="font-extrabold text-lg text-slate-900 tracking-tight">
-              Retino<span className="text-teal-600">Care</span> PHC
+              Netra<span className="text-teal-600">Care</span> PHC
             </span>
           </Link>
 
@@ -39,7 +39,7 @@ export default function RegisterPage() {
       </div>
 
       <footer className="text-center text-xs text-slate-400 py-4">
-        RetinoCare PHC &bull; Smart India Hackathon DR Screening System
+        NetraCare PHC &bull; Smart India Hackathon DR Screening System
       </footer>
     </main>
   );

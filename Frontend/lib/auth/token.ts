@@ -26,14 +26,15 @@ export interface Session {
 }
 
 export function toSessionUser(payload: Record<string, unknown>): SessionUser {
+  const phcId = ((payload.phcId as string) ?? (payload.phc_id as string) ?? null) || null;
   return {
-    id: (payload.sub as string) || '',
+    id: (payload.sub as string) || (payload.id as string) || '',
     email: (payload.email as string) || '',
     name: (payload.name as string) || '',
     role: (payload.role as string) || 'phc_staff',
-    phcId: ((payload.phcId as string) ?? null) || null,
+    phcId: phcId,
     provider: (payload.provider as string) || 'credentials',
-    needsProfile: Boolean(payload.needs_profile),
+    needsProfile: Boolean(payload.needs_profile) || !phcId,
   };
 }
 

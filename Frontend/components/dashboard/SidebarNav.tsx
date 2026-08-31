@@ -79,7 +79,7 @@ export default function SidebarNav({ user, onCloseMobile }: SidebarNavProps) {
             </div>
             <div>
               <span className="font-extrabold text-base text-white tracking-tight leading-tight block">
-                Retino<span className="text-teal-400">Care</span>
+                Netra<span className="text-teal-400">Care</span>
               </span>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                 PHC DR Screening AI

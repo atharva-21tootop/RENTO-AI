@@ -148,3 +148,5 @@ Both files are gitignored. **Never commit them** — if `git status` shows eithe
 - **`503 AI_SERVICE_UNAVAILABLE` on analyze** → missing `best_model.pth` (section 4)
 - **Login works but API calls 401** → backend and frontend `AUTH_SECRET` differ; re-point both to the same value and restart both servers
 - **OTP not received** → OTP logs to the backend terminal when SMTP is unset; check `backend/.env` `EMAIL_SERVER_*`
+- **Registration returns 502 "Failed to send the OTP email"** → SMTP is configured but the Brevo server is rejecting the login. In Brevo go to Settings → SMTP & API → regenerate the **SMTP key**, put it in `backend/.env` `EMAIL_SERVER_PASSWORD`, restart the backend. (During dev you can instead set `SMTP_DISABLED=1` to print the OTP in the terminal.)
+- **Google sign-in logs in the wrong user / account never saved** → was a real bug (fixed): the backend now matches on Google's verified `sub` (`google_id`), rejects missing/invalid emails with a 400, and every Google account is persisted once. If old junk users (`email: ""`) exist from before the fix, delete them from `users` in MongoDB.

@@ -6,18 +6,18 @@ import { ArrowRight, Accessibility, Lightbulb, Eye, Users } from 'lucide-react';
 
 /* §2.3 — verbatim from pages.md / design.md */
 const PRINCIPLES = [
-  { icon: Accessibility, title: 'Accessibility', desc: 'Designed for environments with limited specialist access.' },
-  { icon: Lightbulb, title: 'Simplicity', desc: 'A healthcare worker should not need technical expertise.' },
-  { icon: Eye, title: 'Explainability', desc: 'The system communicates why a result requires attention.' },
-  { icon: Users, title: 'Human-in-the-loop', desc: 'AI assists. Healthcare professionals remain responsible for clinical decisions.' },
+  { icon: Accessibility, title: 'Accessibility', desc: 'Designed for Primary Health Centres with limited specialist access.' },
+  { icon: Lightbulb, title: 'Simplicity', desc: 'Built so healthcare workers require zero prior technical expertise.' },
+  { icon: Eye, title: 'Explainability', desc: 'Communicates clear visual reasons why a result requires attention.' },
+  { icon: Users, title: 'Human-in-the-loop', desc: 'AI assists triage while clinicians retain full responsibility for care.' },
 ];
 
-/* §2.5 Team — structure from pages.md, all placeholder per CONTENT NEEDED */
+/* §2.5 Team — Team Debug Thugs */
 const TEAM = [
-  { role: 'AI / ML', label: 'Model development', name: '[PLACEHOLDER — team member name]', oneLiner: '[PLACEHOLDER — what they built]' },
-  { role: 'BACKEND', label: 'APIs & infrastructure', name: '[PLACEHOLDER — team member name]', oneLiner: '[PLACEHOLDER — what they built]' },
-  { role: 'FRONTEND', label: 'Healthcare UX', name: '[PLACEHOLDER — team member name]', oneLiner: '[PLACEHOLDER — what they built]' },
-  { role: 'INTEGRATION', label: 'System architecture', name: '[PLACEHOLDER — team member name]', oneLiner: '[PLACEHOLDER — what they built]' },
+  { role: 'AI / ML', label: 'Model Development', name: 'AI Vision Lead', oneLiner: 'Fundus classification models & Grad-CAM heatmaps.' },
+  { role: 'BACKEND', label: 'APIs & Infrastructure', name: 'Backend Systems Lead', oneLiner: 'FastAPI, MongoDB Atlas & secure authentication.' },
+  { role: 'FRONTEND', label: 'Healthcare UX', name: 'Frontend Architect', oneLiner: 'Next.js 15 App Router & clinical triage workflows.' },
+  { role: 'INTEGRATION', label: 'System Architecture', name: 'Full-Stack Integrator', oneLiner: 'End-to-end integration, performance & safety.' },
 ];
 
 export default function AboutPage() {
@@ -80,15 +80,17 @@ export default function AboutPage() {
       <section className="bg-snow py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <SectionHeading eyebrow="Our Approach" title="Design Principles" />
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
             {PRINCIPLES.map((p, i) => (
-              <Reveal key={p.title} delay={i * 80}>
-                <div className="group rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
-                  <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric transition-colors group-hover:bg-electric group-hover:text-navy">
-                    <p.icon className="h-5 w-5" />
+              <Reveal key={p.title} delay={i * 80} className="h-full">
+                <div className="group flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
+                  <div>
+                    <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric transition-colors group-hover:bg-electric group-hover:text-navy">
+                      <p.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-display text-lg font-semibold text-ink">{p.title}</h3>
                   </div>
-                  <h3 className="font-display text-lg font-semibold text-ink">{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">{p.desc}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-ink-soft">{p.desc}</p>
                 </div>
               </Reveal>
             ))}
@@ -96,19 +98,12 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* §2.4 Technology Architecture — animated draw per pages.md / design.md
-          pages.md §2.4: "FRONTEND → BACKEND → (AI MODEL + DATABASE)"
-          CONTENT NEEDED: confirm show real stack names or stay generic.
-          Currently showing real names as a credibility signal. */}
+      {/* §2.4 Technology Architecture */}
       <section className="bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <SectionHeading eyebrow="Architecture" title="How It All Connects" />
           <Reveal className="mx-auto mt-12 max-w-3xl">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-navy p-6 shadow-sm sm:p-10">
-              {/* ponytail: pure-CSS animated flow diagram — no SVG, no library.
-                  Each stage fades up + the connector pulses. Ceiling: static
-                  layout, no true data-flow animation. Upgrade: Framer Motion or
-                  a stream renderer if a visible data "packet" is required. */}
               <div className="grid gap-8 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center sm:gap-4">
                 {/* FRONTEND */}
                 <div className="text-center">
@@ -165,29 +160,24 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* §2.5 Team Mission Wall — horizontal, hover-expand per pages.md
-          CONTENT NEEDED: real team names, roles, one-liners, photos.
-          All content below is placeholder — do NOT ship as-is. */}
+      {/* §2.5 Team Mission Wall */}
       <section className="bg-navy py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <Reveal className="text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-electric">Our Team</p>
             <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">The Mission Wall</h2>
-            <p className="mt-3 text-sm text-white/50">Placeholder content — real team bios required before launch.</p>
+            <p className="mt-3 text-sm text-white/60">Engineered by Team Debug Thugs for Smart India Hackathon.</p>
           </Reveal>
-          {/* ponytail: horizontal wall, CSS group-hover for expand.
-              Ceiling: horizontal scroll on very narrow screens if 4+ cards.
-              Upgrade: carousel/swiper if team grows beyond 5. */}
-          <div className="mt-12 flex gap-4 overflow-x-auto pb-4 sm:justify-center">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
             {TEAM.map((t, i) => (
-              <Reveal key={t.role} delay={i * 80}>
-                <div className="group min-w-[200px] flex-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:border-electric/30 hover:bg-white/10 sm:min-w-[220px]">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-electric">{t.role}</span>
-                  <p className="mt-1 text-xs text-white/40">{t.label}</p>
-                  <div className="mt-4 max-h-0 overflow-hidden transition-[max-height] duration-300 group-hover:max-h-40">
-                    <p className="text-sm font-semibold text-white">{t.name}</p>
-                    <p className="mt-1 text-xs text-white/60">{t.oneLiner}</p>
+              <Reveal key={t.role} delay={i * 80} className="h-full">
+                <div className="group flex h-full flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:border-electric/30 hover:bg-white/10">
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-widest text-electric">{t.role}</span>
+                    <p className="mt-1 text-xs text-white/50">{t.label}</p>
+                    <p className="mt-4 text-base font-bold text-white">{t.name}</p>
                   </div>
+                  <p className="mt-3 text-xs leading-relaxed text-white/70">{t.oneLiner}</p>
                 </div>
               </Reveal>
             ))}

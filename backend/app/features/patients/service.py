@@ -15,7 +15,10 @@ def _generate_patient_id() -> str:
     return f"P-{counter['seq']:04d}"
 
 
-def create_patient(data: Dict) -> Dict:
+from bson import ObjectId
+
+
+def create_patient(data: Dict, phc_id: Optional[str] = None) -> Dict:
     db = get_db()
     patient_id = _generate_patient_id()
     patient = {
@@ -25,6 +28,7 @@ def create_patient(data: Dict) -> Dict:
         "gender": data["gender"],
         "diabetes_duration_years": data.get("diabetes_duration_years"),
         "contact_number": data.get("contact_number"),
+        "phc_id": ObjectId(phc_id) if phc_id else None,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     db.patients.insert_one(patient)
@@ -36,9 +40,11 @@ def get_patient(patient_id: str) -> Optional[Dict]:
     return db.patients.find_one({"patient_id": patient_id}, {"_id": 0})
 
 
-def list_patients(search: Optional[str] = None, page: int = 1, limit: int = 20) -> Tuple[List[Dict], int]:
+def list_patients(search: Optional[str] = None, page: int = 1, limit: int = 20, phc_id: Optional[str] = None) -> Tuple[List[Dict], int]:
     db = get_db()
-    query = {}
+    if not phc_id:
+        return [], 0
+    query = {"phc_id": ObjectId(phc_id)}
     if search:
         query["name"] = {"$regex": re.escape(search), "$options": "i"}
     total = db.patients.count_documents(query)

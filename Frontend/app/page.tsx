@@ -1,12 +1,14 @@
 import PublicLayout from '@/components/public/PublicLayout';
+import Hero from '@/components/public/Hero';
 import SectionHeading from '@/components/public/SectionHeading';
 import CTAButton from '@/components/public/CTAButton';
 import Reveal from '@/components/public/Reveal';
-import HeroEye from '@/components/public/HeroEye';
 import ProblemSolution from '@/components/public/ProblemSolution';
 import AIDemoSequence from '@/components/public/AIDemoSequence';
 import ImpactNumbers from '@/components/public/ImpactNumbers';
 import NodeNetwork from '@/components/public/NodeNetwork';
+import PhcJourney from '@/components/public/PhcJourney';
+import BeforeAfter from '@/components/public/BeforeAfter';
 import {
   ArrowRight,
   ShieldCheck,
@@ -21,6 +23,7 @@ import {
   BarChart3,
   ClipboardCheck,
   Send,
+  MapPin,
 } from 'lucide-react';
 
 /* ─── Trust Strip items ─── */
@@ -42,12 +45,17 @@ const PROBLEMS = [
   },
   {
     icon: Eye,
-    title: 'Delayed Detection',
+    title: 'Screening Delays',
     desc: 'Damage often occurs before symptoms appear. By the time vision changes are noticed, intervention may be too late.',
   },
   {
+    icon: MapPin,
+    title: 'Rural Distance',
+    desc: 'Patients travel long distances to reach a specialist, and many don\'t make the journey in time.',
+  },
+  {
     icon: ShieldCheck,
-    title: 'Screening Bottleneck',
+    title: 'Manual Bottlenecks',
     desc: 'Manual screening can\'t scale to match demand. 77M+ diabetic adults in India need regular eye screening.',
   },
 ];
@@ -61,25 +69,28 @@ const PIPELINE = [
   { icon: Send, label: 'Refer', color: 'text-vision' },
 ];
 
-/* ─── Who Benefits (§1.8) ─── */
+/* ─── Who Benefits (§1.9) ─── */
 const PERSONAS = [
   {
-    icon: HeartPulse,
     role: 'Healthcare Worker',
-    desc: 'Capture retinal image → Upload → Receive AI-assisted result',
-    color: 'bg-electric/10 text-electric',
+    desc: 'Capture the retinal image and run the screening at the PHC.',
+    flow: ['Capture', 'Upload', 'Screen'],
+    img: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=700&q=70',
+    alt: 'Healthcare worker attending to a patient at a primary health centre',
   },
   {
-    icon: Stethoscope,
     role: 'Doctor',
-    desc: 'Review → Interpret → Refer',
-    color: 'bg-vision/10 text-vision',
+    desc: 'Review the AI-assisted finding, interpret it, and decide the next step.',
+    flow: ['Review', 'Interpret', 'Refer'],
+    img: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=700&q=70',
+    alt: 'Doctor reviewing a medical result',
   },
   {
-    icon: Users,
     role: 'Patient',
-    desc: 'Screen → Understand → Act Earlier',
-    color: 'bg-honey/10 text-honey',
+    desc: 'Get screened close to home, understand the result, and act earlier.',
+    flow: ['Screen', 'Understand', 'Act Earlier'],
+    img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=700&q=70',
+    alt: 'Patient in a warm, caring healthcare setting',
   },
 ];
 
@@ -89,48 +100,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════
           §1.2 HERO
           ════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-navy pt-24 pb-16 sm:pt-32 sm:pb-24">
-        {/* subtle gradient deco */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-30"
-          style={{
-            backgroundImage:
-              'radial-gradient(ellipse 60% 50% at 50% 0%, #00C9B720 0%, transparent 70%)',
-          }}
-        />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            <div className="space-y-6 text-center lg:text-left">
-              <Reveal>
-                <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
-                  See Diabetic Retinopathy Risk,{' '}
-                  <span className="text-electric">Sooner</span>
-                </h1>
-              </Reveal>
-              <Reveal delay={100}>
-                <p className="mx-auto max-w-lg text-base leading-relaxed text-white/70 sm:text-lg lg:mx-0">
-                  AI-assisted retinal screening built for Primary Health Centres
-                  — where specialists can&apos;t always reach.
-                </p>
-              </Reveal>
-              <Reveal delay={200}>
-                <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-start">
-                  <CTAButton href="/register" variant="primary">
-                    Start Screening <ArrowRight className="h-4 w-4" />
-                  </CTAButton>
-                  <CTAButton href="/how-it-works" variant="secondary">
-                    See How It Works
-                  </CTAButton>
-                </div>
-              </Reveal>
-            </div>
-            <Reveal delay={300} className="flex justify-center">
-              <HeroEye />
-            </Reveal>
-          </div>
-        </div>
-      </section>
+      <Hero />
 
       {/* ════════════════════════════════════════
           §1.3 TRUST STRIP
@@ -152,24 +122,49 @@ export default function HomePage() {
           §1.4 THE PROBLEM
           ════════════════════════════════════════ */}
       <section className="bg-snow py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <SectionHeading
-            eyebrow="The Challenge"
-            title="The Bottleneck Isn't Patients. It's Screening."
-            lede="Millions of diabetic patients in rural India need regular eye screening — but the infrastructure to deliver it doesn't exist at scale."
-          />
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {PROBLEMS.map((p, i) => (
-              <Reveal key={p.title} delay={i * 100}>
-                <div className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-electric/30">
-                  <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric transition-colors group-hover:bg-electric group-hover:text-navy">
-                    <p.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-display text-lg font-semibold text-ink">{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">{p.desc}</p>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* Large Indian healthcare image */}
+            <Reveal className="order-2 lg:order-1">
+              <div className="relative overflow-hidden rounded-3xl depth-shadow">
+                <img
+                  src="https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=1000&q=70"
+                  alt="Indian healthcare worker providing care in a rural primary health centre"
+                  loading="lazy"
+                  className="aspect-[4/5] w-full object-cover sm:aspect-[3/4]"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5">
+                  <p className="font-display text-xl font-bold text-white">Specialists shouldn't be the only place</p>
+                  <p className="mt-1 text-sm text-white/80">where screening begins.</p>
                 </div>
-              </Reveal>
-            ))}
+              </div>
+            </Reveal>
+
+            {/* 4 problems */}
+            <div className="order-1 lg:order-2">
+              <SectionHeading
+                eyebrow="The Challenge"
+                title="The Bottleneck Isn't Patients. It's Screening."
+                lede="Millions of diabetic patients in rural India need regular eye screening — but the infrastructure to deliver it doesn't exist at scale."
+              />
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                {PROBLEMS.map((p, i) => (
+                  <Reveal key={p.title} delay={i * 90}>
+                    <div className="group h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                      <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-electric/10 text-electric transition-colors group-hover:bg-electric group-hover:text-navy">
+                        <p.icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-display text-base font-semibold text-ink">
+                        <span className="mr-1.5 text-xs font-bold text-electric">0{i + 1}</span>
+                        {p.title}
+                      </h3>
+                      <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">{p.desc}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -228,7 +223,12 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════════════════════════
-          §1.8 WHO BENEFITS
+          §1.8 BEFORE / AFTER PATHWAY
+          ════════════════════════════════════════ */}
+      <BeforeAfter />
+
+      {/* ════════════════════════════════════════
+          §1.9 WHO BENEFITS
           ════════════════════════════════════════ */}
       <section className="bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -240,12 +240,32 @@ export default function HomePage() {
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             {PERSONAS.map((p, i) => (
               <Reveal key={p.role} delay={i * 100}>
-                <div className="rounded-2xl border border-slate-200 bg-snow p-6 text-center">
-                  <div className={`mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl ${p.color}`}>
-                    <p.icon className="h-6 w-6" />
+                <div className="group card-plane overflow-hidden rounded-3xl border border-slate-200 bg-snow shadow-sm transition-shadow hover:shadow-lg">
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={p.img}
+                      alt={p.alt}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
+                    <div className="absolute bottom-3 left-4">
+                      <p className="font-display text-lg font-bold text-white">{p.role}</p>
+                    </div>
                   </div>
-                  <h3 className="font-display text-lg font-semibold text-ink">{p.role}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">{p.desc}</p>
+                  <div className="p-5">
+                    <p className="text-sm leading-relaxed text-ink-soft">{p.desc}</p>
+                    <div className="mt-4 flex items-center gap-2">
+                      {p.flow.map((step, j) => (
+                        <span key={step} className="flex items-center gap-2 text-[11px] font-semibold text-ink">
+                          <span className="rounded-full border border-electric/30 bg-electric/10 px-2.5 py-1 text-electric">
+                            {step}
+                          </span>
+                          {j < p.flow.length - 1 && <span className="h-px w-2 bg-slate-300" />}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </Reveal>
             ))}
@@ -254,34 +274,9 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════════════════════════
-          §1.9 RURAL HEALTHCARE NETWORK
+          §1.9 RURAL PHC NETWORK STORY
           ════════════════════════════════════════ */}
-      <section className="bg-snow py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <SectionHeading
-            eyebrow="Rural Healthcare"
-            title="Built for Where Specialists Aren't"
-            lede="Primary Health Centres are already closer to patients than any specialist ever will be. AI helps them screen effectively."
-          />
-          {/* India silhouette + PHC nodes — simplified visual */}
-          <Reveal className="mx-auto mt-12 max-w-3xl">
-            <div className="relative rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-              <div className="flex items-center justify-center gap-6 text-sm text-ink-soft">
-                <span className="font-semibold text-electric">Village</span>
-                <ArrowRight className="h-4 w-4 text-slate-300" />
-                <span className="font-semibold text-electric">PHC</span>
-                <ArrowRight className="h-4 w-4 text-slate-300" />
-                <span className="font-semibold text-vision">District Hospital</span>
-                <ArrowRight className="h-4 w-4 text-slate-300" />
-                <span className="font-semibold text-honey">Specialist</span>
-              </div>
-              <p className="mt-4 text-center text-xs text-ink-muted">
-                AI screening at the PHC level connects rural patients to specialist care faster.
-              </p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      <PhcJourney />
 
       {/* ════════════════════════════════════════
           §1.10 IMPACT NUMBERS

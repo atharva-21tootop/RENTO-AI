@@ -6,7 +6,7 @@ import SectionHeading from '@/components/public/SectionHeading';
 import CTAButton from '@/components/public/CTAButton';
 import Reveal from '@/components/public/Reveal';
 import RetinaScanner from '@/components/public/RetinaScanner';
-import { ArrowRight, ShieldCheck, Activity, GitBranch, Clock, Lock, Eye } from 'lucide-react';
+import { ArrowRight, Clock, Lock, Eye } from 'lucide-react';
 
 /* Image Analysis hover text cycle */
 function ImageAnalysisCard() {
@@ -83,13 +83,23 @@ export default function FeaturesPage() {
   return (
     <PublicLayout>
       {/* §4.1 Hero */}
-      <section className="relative overflow-hidden bg-navy pt-24 pb-16 sm:pt-32 sm:pb-24">
+      <section className="relative overflow-hidden bg-navy pt-28 pb-20 sm:pt-36 sm:pb-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 0%, #00C9B720 0%, transparent 70%)' }} />
         <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <Reveal>
-            <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-vision">
+              Platform Features
+            </span>
+          </Reveal>
+          <Reveal delay={100}>
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight text-white sm:text-5xl">
               Everything Needed for AI-Assisted Retinal Screening
             </h1>
+          </Reveal>
+          <Reveal delay={200}>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-white/70">
+              Built around the real PHC workflow — from capture at the primary centre to specialist referral when it matters.
+            </p>
           </Reveal>
         </div>
       </section>
@@ -97,32 +107,45 @@ export default function FeaturesPage() {
       {/* §4.2 Bento Grid */}
       <section className="bg-snow py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* AI-Assisted Screening — large card, spans 2 cols */}
-            <Reveal className="sm:col-span-2 lg:col-span-2">
-              <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md sm:p-8">
-                <div className="grid flex-1 items-center gap-6 sm:grid-cols-[1fr_auto]">
-                  <div>
-                    <h3 className="font-display text-xl font-bold text-ink sm:text-2xl">AI-Assisted Screening</h3>
-                    <p className="mt-2 text-sm text-ink-soft sm:text-base">Retinal analysis that flags risk in seconds, not days.</p>
-                  </div>
-                  <div className="mx-auto w-full max-w-[240px] sm:mx-0 sm:w-[200px]">
-                    <RetinaScanner />
-                  </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* AI-Assisted Screening — large card, spans 2 cols */}
+          <Reveal className="sm:col-span-2 lg:col-span-2">
+            <div className="group card-plane relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-navy p-6 shadow-sm transition-all duration-300 hover:shadow-xl sm:p-8">
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(ellipse 80% 90% at 85% 20%, #00C9B740 0%, transparent 60%)' }} />
+              <div className="relative grid flex-1 items-center gap-6 sm:grid-cols-[1fr_auto]">
+                <div>
+                  <span className="inline-block rounded-full border border-electric/30 bg-electric/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-vision">
+                    AI Screening
+                  </span>
+                  <h3 className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">AI-Assisted Screening</h3>
+                  <p className="mt-2 text-sm text-white/70 sm:text-base">Retinal analysis that flags risk in seconds, not days.</p>
+                </div>
+                <div className="mx-auto w-full max-w-[240px] sm:mx-0 sm:w-[200px]">
+                  <RetinaScanner />
                 </div>
               </div>
-            </Reveal>
+            </div>
+          </Reveal>
 
-            {/* PHC-Ready */}
-            <Reveal delay={50}>
-              <div className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
-                <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric">
-                  <Activity className="h-5 w-5" />
-                </div>
+          {/* PHC-Ready */}
+          <Reveal delay={50}>
+            <div className="group card-plane relative flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl">
+              <div className="relative h-28 overflow-hidden rounded-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=600&q=60"
+                  alt="Staff at a primary health centre"
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/70 to-transparent" />
+                <span className="absolute bottom-2 left-3 text-xs font-bold text-white">PRIMARY CARE</span>
+              </div>
+              <div className="mt-4">
                 <h3 className="font-display text-lg font-semibold text-ink">PHC-Ready</h3>
                 <p className="mt-2 text-sm text-ink-soft">Built for primary care, not specialist clinics.</p>
               </div>
-            </Reveal>
+            </div>
+          </Reveal>
 
             {/* Image Analysis — hover text cycle */}
             <Reveal delay={100}>
@@ -131,12 +154,12 @@ export default function FeaturesPage() {
 
             {/* Risk Classification — animated gauge */}
             <Reveal delay={150}>
-              <div className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
-                <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-honey/10 text-honey">
-                  <Activity className="h-5 w-5" />
-                </div>
+              <div className="group card-plane flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl">
+                <span className="mb-3 inline-block rounded-full border border-honey/30 bg-honey/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-honey">
+                  Risk
+                </span>
                 <h3 className="font-display text-lg font-semibold text-ink">Risk Classification</h3>
-                <div className="mt-4 flex-1">
+                <div className="mt-3 flex-1">
                   <RiskGauge />
                 </div>
               </div>
@@ -144,10 +167,10 @@ export default function FeaturesPage() {
 
             {/* Referral Workflow */}
             <Reveal delay={200}>
-              <div className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
-                <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-vision/10 text-vision">
-                  <GitBranch className="h-5 w-5" />
-                </div>
+              <div className="group card-plane flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl">
+                <span className="mb-3 inline-block rounded-full border border-vision/30 bg-vision/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-vision">
+                  Referral
+                </span>
                 <h3 className="font-display text-lg font-semibold text-ink">Referral Workflow</h3>
                 <p className="mt-2 text-sm text-ink-soft">PHC → Doctor → Specialist, without the wait.</p>
                 {/* animated route line */}
@@ -162,11 +185,9 @@ export default function FeaturesPage() {
               </div>
             </Reveal>
 
-            {/* Patient History — only backend-supported fields
-                Backend: patient (name, age, gender, diabetes_type, diabetes_duration)
-                screening (date, eye, grade, risk_level, recommendation) */}
+            {/* Patient History — only backend-supported fields */}
             <Reveal delay={250}>
-              <div className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
+              <div className="group card-plane flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl">
                 <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric">
                   <Clock className="h-5 w-5" />
                 </div>
@@ -186,23 +207,28 @@ export default function FeaturesPage() {
               </div>
             </Reveal>
 
-            {/* Secure Data Handling — NO compliance claims per pages.md */}
+            {/* Secure Data Handling — NO compliance claims */}
             <Reveal delay={300}>
-              <div className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
-                <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-navy/10 text-navy">
+              <div className="group card-plane flex h-full flex-col rounded-3xl border border-slate-200 bg-navy p-6 shadow-sm transition-all duration-300 hover:shadow-xl">
+                <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/15 text-vision">
                   <Lock className="h-5 w-5" />
                 </div>
-                <h3 className="font-display text-lg font-semibold text-ink">Secure Data Handling</h3>
-                <p className="mt-2 text-sm text-ink-soft">Patient data stays protected, end to end.</p>
-                <p className="mt-auto pt-3 text-[10px] text-ink-muted"> ponytail: no compliance claims (HIPAA/ISO) without real certification — upgrade when certified.</p>
+                <h3 className="font-display text-lg font-semibold text-white">Secure Data Handling</h3>
+                <p className="mt-2 text-sm text-white/70">Patient data stays protected, end to end.</p>
+                <div className="mt-auto flex items-center gap-1.5 pt-4 text-[10px] font-semibold text-vision">
+                  {['Capture', 'Encrypt', 'Analyze', 'Store'].map((s, j) => (
+                    <span key={s} className="flex items-center gap-1.5">
+                      <span className="rounded border border-electric/30 bg-electric/10 px-2 py-1">{s}</span>
+                      {j < 3 && <span className="text-electric/60">→</span>}
+                    </span>
+                  ))}
+                </div>
               </div>
             </Reveal>
 
-            {/* Explainable Results — shows actual model outputs, not lesion types
-                Model outputs: DR grade (No DR / Mild / Moderate / Severe / Proliferative)
-                + confidence score + Grad-CAM heatmap. Does NOT output individual lesion types. */}
+            {/* Explainable Results */}
             <Reveal delay={350}>
-              <div className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
+              <div className="group card-plane flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl">
                 <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric">
                   <Eye className="h-5 w-5" />
                 </div>

@@ -14,28 +14,30 @@ from . import otp as otp_service
 def _user_public(doc: dict) -> dict:
     user_id = doc["_id"]
     d = strip_id(dict(doc))
+    phc_id = str(d["phc_id"]) if d.get("phc_id") else None
     return {
         "id": str(user_id),
         "name": d.get("name", ""),
         "email": d["email"],
         "provider": d.get("provider", "credentials"),
         "role": d.get("role", "phc_staff"),
-        "phc_id": str(d["phc_id"]) if d.get("phc_id") else None,
+        "phc_id": phc_id,
         "is_verified": d.get("is_verified", False),
-        "needs_profile": d.get("needs_profile", False),
+        "needs_profile": bool(d.get("needs_profile", False)) or (phc_id is None),
         "created_at": d.get("created_at"),
     }
 
 
 def _to_claims(doc: dict) -> dict:
+    phc_id = str(doc["phc_id"]) if doc.get("phc_id") else None
     return {
         "id": str(doc["_id"]),
         "email": doc["email"],
         "name": doc.get("name", ""),
         "role": doc.get("role", "phc_staff"),
-        "phcId": str(doc["phc_id"]) if doc.get("phc_id") else None,
+        "phcId": phc_id,
         "provider": doc.get("provider", "credentials"),
-        "needs_profile": doc.get("needs_profile", False),
+        "needs_profile": bool(doc.get("needs_profile", False)) or (phc_id is None),
     }
 
 
@@ -156,14 +158,18 @@ def google_login(google_id: str, email: str, name: str) -> dict:
         user = db.users.find_one({"email": email})
 
     if user:
+        phc_id = user.get("phc_id")
+        needs_profile = True if not phc_id else bool(user.get("needs_profile", False))
         fields = {
             "name": name or user.get("name", ""),
             "is_verified": True,
             "google_id": google_id,
+            "needs_profile": needs_profile,
         }
         if user.get("provider") != "google":
             fields["provider"] = "google"
         db.users.update_one({"_id": user["_id"]}, {"$set": fields})
+        user.update(fields)
         is_new = False
     else:
         res = db.users.insert_one({

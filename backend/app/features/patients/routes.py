@@ -9,7 +9,8 @@ router = APIRouter()
 
 @router.post("", response_model=PatientResponse, status_code=201)
 def create_patient_endpoint(data: PatientCreate, user: dict = Depends(get_current_user)):
-    patient = create_patient(data.model_dump())
+    phc_id = user.get("phc_id") or user.get("phcId")
+    patient = create_patient(data.model_dump(), phc_id=phc_id)
     return patient
 
 
@@ -18,8 +19,10 @@ def list_patients_endpoint(
     search: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
+    user: dict = Depends(get_current_user),
 ):
-    items, total = list_patients(search=search, page=page, limit=limit)
+    phc_id = user.get("phc_id") or user.get("phcId")
+    items, total = list_patients(search=search, page=page, limit=limit, phc_id=phc_id)
     return {
         "items": items,
         "total": total,

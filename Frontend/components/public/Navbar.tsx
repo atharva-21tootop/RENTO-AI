@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Eye, Menu, X, ArrowRight } from 'lucide-react';
+import { Eye, Menu, X, ArrowRight, User } from 'lucide-react';
 import CTAButton from './CTAButton';
 
 const NAV = [
@@ -17,6 +17,7 @@ const NAV = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -24,6 +25,13 @@ export default function Navbar() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/backend/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data))
+      .catch(() => setUser(null));
   }, []);
 
   // Lock body scroll while the mobile menu is open
@@ -52,13 +60,13 @@ export default function Navbar() {
         <Link
           href="/"
           className="flex items-center gap-2.5 text-white animate-fade-up"
-          aria-label="RetinoCare AI home"
+          aria-label="NetraCare home"
         >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-electric text-navy shadow-md shadow-electric/20">
             <Eye className="h-5 w-5" strokeWidth={2.2} />
           </span>
           <span className="font-display text-lg font-bold tracking-tight">
-            Retino<span className="text-electric">Care</span> AI
+            Netra<span className="text-electric">Care</span>
           </span>
         </Link>
 
@@ -83,18 +91,31 @@ export default function Navbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm font-semibold text-white/90 transition-colors hover:text-white animate-fade-up"
-            style={{ animationDelay: '480ms' }}
-          >
-            Sign In
-          </Link>
-          <span className="animate-scale-in" style={{ animationDelay: '540ms' }}>
-            <CTAButton href="/register" variant="primary">
-              Get Started <ArrowRight className="h-4 w-4" />
-            </CTAButton>
-          </span>
+          {user ? (
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl bg-electric px-4 py-2 text-sm font-bold text-navy shadow-md shadow-electric/20 transition-all hover:brightness-110"
+            >
+              <User className="h-4 w-4" />
+              <span>Dashboard ({user.name?.split(' ')[0] || 'User'})</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-semibold text-white/90 transition-colors hover:text-white animate-fade-up"
+                style={{ animationDelay: '480ms' }}
+              >
+                Sign In
+              </Link>
+              <span className="animate-scale-in" style={{ animationDelay: '540ms' }}>
+                <CTAButton href="/register" variant="primary">
+                  Get Started <ArrowRight className="h-4 w-4" />
+                </CTAButton>
+              </span>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -134,20 +155,34 @@ export default function Navbar() {
             );
           })}
           <div className="flex flex-col gap-2 pt-4">
-            <Link
-              href="/login"
-              onClick={() => setOpen(false)}
-              className="rounded-lg border border-white/20 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-5 py-3 text-sm font-semibold text-navy shadow-lg shadow-electric/20 transition-all hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric"
-            >
-              Get Started <ArrowRight className="h-4 w-4" />
-            </Link>
+            {user ? (
+              <Link
+                href="/dashboard"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-5 py-3 text-sm font-semibold text-navy shadow-lg shadow-electric/20"
+              >
+                <User className="h-4 w-4" />
+                <span>Go to Dashboard</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border border-white/20 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-electric px-5 py-3 text-sm font-semibold text-navy shadow-lg shadow-electric/20 transition-all hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric"
+                >
+                  Get Started <ArrowRight className="h-4 w-4" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

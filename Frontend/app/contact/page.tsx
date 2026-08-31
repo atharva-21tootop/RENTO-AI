@@ -19,9 +19,9 @@ const FAQ = [
 
 /* §5.2 Contact Options Grid */
 const OPTIONS = [
-  { icon: HelpCircle, title: 'General Questions', desc: 'Project information and platform questions.' },
-  { icon: Mail, title: 'Technical Support', desc: 'Integration and technical issues.' },
-  { icon: Handshake, title: 'Collaboration', desc: 'Hospitals, institutions, researchers, and partners.' },
+  { icon: HelpCircle, title: 'General Questions', desc: 'Project information, usage guidelines, and general platform inquiries.' },
+  { icon: Mail, title: 'Technical Support', desc: 'API integration, backend configuration, and technical assistance.' },
+  { icon: Handshake, title: 'Collaboration', desc: 'Clinical research, healthcare institutions, and PHC partnerships.' },
 ];
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
@@ -72,15 +72,17 @@ export default function ContactPage() {
       {/* §5.2 Contact Options Grid */}
       <section className="bg-snow py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-3 items-stretch">
             {OPTIONS.map((o, i) => (
-              <Reveal key={o.title} delay={i * 80}>
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
-                  <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric">
-                    <o.icon className="h-5 w-5" />
+              <Reveal key={o.title} delay={i * 80} className="h-full">
+                <div className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-electric/30 hover:shadow-md">
+                  <div>
+                    <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-electric/10 text-electric">
+                      <o.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-display text-lg font-semibold text-ink">{o.title}</h3>
                   </div>
-                  <h3 className="font-display text-lg font-semibold text-ink">{o.title}</h3>
-                  <p className="mt-2 text-sm text-ink-soft">{o.desc}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-ink-soft">{o.desc}</p>
                 </div>
               </Reveal>
             ))}

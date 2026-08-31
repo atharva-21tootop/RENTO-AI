@@ -8,9 +8,14 @@ import { SESSION_COOKIE, verifyToken } from '@/lib/auth/token';
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  const isAuthed = token ? (await verifyToken(token)) !== null : false;
+  const payload = token ? await verifyToken(token) : null;
+  const isAuthed = payload !== null;
+  const phcId = (payload?.phcId as string) || (payload?.phc_id as string) || null;
+  const needsProfile = payload ? (Boolean(payload.needs_profile) || !phcId) : false;
 
-  const isProtected = pathname.startsWith('/dashboard') || pathname === '/onboarding';
+  const isDashboard = pathname.startsWith('/dashboard');
+  const isOnboarding = pathname === '/onboarding';
+  const isProtected = isDashboard || isOnboarding;
   const isAuthPage =
     pathname === '/login' ||
     pathname === '/register' ||
@@ -24,9 +29,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isAuthPage && isAuthed) {
+  if (isDashboard && isAuthed && needsProfile) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/onboarding';
+    return NextResponse.redirect(url);
+  }
+
+  if (isOnboarding && isAuthed && !needsProfile) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  if (isAuthPage && isAuthed) {
+    const url = req.nextUrl.clone();
+    url.pathname = needsProfile ? '/onboarding' : '/dashboard';
     return NextResponse.redirect(url);
   }
 

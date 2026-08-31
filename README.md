@@ -1,4 +1,4 @@
-# RetinoCare — PHC Diabetic Retinopathy Screening
+# NetraCare — PHC Diabetic Retinopathy Screening
 
 AI-assisted diabetic retinopathy (DR) screening for healthcare workers at Primary
 Health Centres: a done-right-now RETINO screenshot — patient cards, fundus image

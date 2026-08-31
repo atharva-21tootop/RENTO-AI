@@ -1,4 +1,4 @@
-# RetinoCare — PHC Diabetic Retinopathy Screening
+# NetraCare — PHC Diabetic Retinopathy Screening
 
 Frontend: **Next.js 15 (App Router) + TypeScript + Tailwind + Auth.js v5 (NextAuth)**
 Backend: **FastAPI + PyMongo** in `../backend`

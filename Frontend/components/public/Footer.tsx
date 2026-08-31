@@ -49,7 +49,7 @@ export default function Footer() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-electric text-navy">
                 <Eye className="h-5 w-5" strokeWidth={2.2} />
               </span>
-              <span className="font-display text-lg font-bold">RetinoCare AI</span>
+              <span className="font-display text-lg font-bold">NetraCare</span>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/70">
               AI-assisted retinal screening for primary healthcare.
@@ -85,7 +85,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
-          <p className="text-sm text-white/60">© 2026 RetinoCare AI</p>
+          <p className="text-sm text-white/60">© 2026 NetraCare</p>
           <p className="text-xs text-white/60">Built for accessible healthcare.</p>
           <p className="text-xs font-medium text-electric">
             AI-assisted screening • Human-led care

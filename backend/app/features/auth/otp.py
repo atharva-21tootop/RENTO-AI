@@ -43,9 +43,9 @@ def create_and_send_otp(email: str, purpose: OtpPurpose) -> None:
     send_email(
         to=email,
         subject=(
-            "Verify your email address - RetinoCare PHC"
+            "Verify your email address - NetraCare PHC"
             if purpose == OtpPurpose.register
-            else "Reset your password - RetinoCare PHC"
+            else "Reset your password - NetraCare PHC"
         ),
         html=build_otp_email_html(otp, purpose.value),
         otp_for_dev_only=otp,

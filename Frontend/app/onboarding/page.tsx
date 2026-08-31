@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth/session';
 import OnboardingForm from '@/components/auth/OnboardingForm';
 
-export const metadata = { title: 'Complete Your Profile | RetinoCare' };
+export const metadata = { title: 'Complete Your Profile | NetraCare' };
 
 export default async function OnboardingPage() {
   const session = await getSession();

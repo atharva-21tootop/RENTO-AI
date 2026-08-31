@@ -1,6 +1,6 @@
 # DR Screening Backend
 
-FastAPI backend for the RetinoCare PHC Diabetic Retinopathy screening app. Runs on
+FastAPI backend for the NetraCare PHC Diabetic Retinopathy screening app. Runs on
 a single local MongoDB (`dr_screening`) and owns all auth/OTP/email logic. Full
 project docs (architecture, env vars, auth flow, migration): see the **root `README.md`**.
 
@@ -66,4 +66,4 @@ app/
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins |
 | `MAX_UPLOAD_SIZE_MB` | `10` | Maximum upload file size |
 | `AUTH_SECRET` | — | **must match** the frontend's; signs/verifies bearer tokens |
-| `EMAIL_SERVER_HOST/_PORT/_USER/_PASSWORD`, `EMAIL_FROM` | — | OTP email (dev fallback logs OTP to the terminal) |
+| `EMAIL_SERVER_HOST/_PORT/_USER/_PASSWORD`, `EMAIL_FROM` | — | OTP email. Unset/SMTP_DISABLED → OTP printed to the backend terminal (dev). SMTP configured but rejected → signup fails with HTTP 502 (no silent pretend-success) |

@@ -14,7 +14,10 @@ def _generate_screening_id() -> str:
     return f"SCR-{counter['seq']:04d}"
 
 
-def create_screening(patient_id: str, eye: str) -> Dict:
+from bson import ObjectId
+
+
+def create_screening(patient_id: str, eye: str, phc_id: Optional[str] = None) -> Dict:
     db = get_db()
     screening_id = _generate_screening_id()
     screening = {
@@ -28,6 +31,7 @@ def create_screening(patient_id: str, eye: str) -> Dict:
         "prediction": None,
         "explanation": None,
         "risk": None,
+        "phc_id": ObjectId(phc_id) if phc_id else None,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     db.screenings.insert_one(screening)
@@ -52,9 +56,12 @@ def list_screenings(
     date_to: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
+    phc_id: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
     db = get_db()
-    query = {}
+    if not phc_id:
+        return [], 0
+    query = {"phc_id": ObjectId(phc_id)}
     if patient_id:
         query["patient_id"] = patient_id
     if grade is not None:
