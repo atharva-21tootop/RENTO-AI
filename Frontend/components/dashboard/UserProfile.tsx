@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { LogOut, User as UserIcon, Shield, Mail, Calendar, Loader2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
@@ -18,11 +18,14 @@ interface UserProfileProps {
 }
 
 export default function UserProfile({ user }: UserProfileProps) {
+  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
-    await signOut({ callbackUrl: '/login' });
+    await fetch('/api/backend/auth/logout', { method: 'POST' }).catch(() => {});
+    router.push('/login');
+    router.refresh();
   };
 
   const getInitials = (name?: string | null) => {

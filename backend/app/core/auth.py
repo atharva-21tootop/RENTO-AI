@@ -1,22 +1,25 @@
 from typing import Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
-from app.core.config import AUTH_SECRET
+from app.core.config import AUTH_SECRET, SESSION_COOKIE_NAME
 
 security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> dict:
-    """Verify NextAuth JWT token and return the user payload.
+    """Verify a backend-issued HS256 JWT from the Bearer header or the session cookie."""
+    token = None
+    if credentials:
+        token = credentials.credentials
+    elif SESSION_COOKIE_NAME in request.cookies:
+        token = request.cookies[SESSION_COOKIE_NAME]
 
-    Accepts tokens issued by NextAuth.js (HMAC-SHA256, algorithm HS256).
-    The token contains: sub, email, name, role, phcId, provider, exp, iat.
-    """
-    if not credentials:
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "MISSING_TOKEN", "message": "Authorization token is required"},
@@ -24,7 +27,7 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(
-            credentials.credentials,
+            token,
             AUTH_SECRET,
             algorithms=["HS256"],
         )
@@ -52,4 +55,5 @@ async def get_current_user(
         "role": payload.get("role", "phc_staff"),
         "phcId": payload.get("phcId"),
         "provider": payload.get("provider", "credentials"),
+        "needs_profile": payload.get("needs_profile", False),
     }

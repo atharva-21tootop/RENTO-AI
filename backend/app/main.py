@@ -87,7 +87,7 @@ async def _require_storage_access(
     if verify_signature(kind, filename, exp, sig):
         return
     try:
-        await get_current_user(await security(request))
+        await get_current_user(request, await security(request))
     except HTTPException:
         raise HTTPException(
             status_code=401,

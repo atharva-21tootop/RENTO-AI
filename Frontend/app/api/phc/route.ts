@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 import { apiError } from '@/lib/utils';
 import { proxyData } from '@/lib/backend-proxy';
-import { getBackendAuthToken } from '@/lib/backend-auth';
+import { SESSION_COOKIE } from '@/lib/auth/token';
 
 export async function GET(req: NextRequest) {
   try {
-    const token = await getBackendAuthToken(req);
+    const token = req.cookies.get(SESSION_COOKIE)?.value;
     if (!token) {
       return apiError('Unauthorized', 401);
     }
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = await getBackendAuthToken(req);
+    const token = req.cookies.get(SESSION_COOKIE)?.value;
     if (!token) {
       return apiError('Unauthorized', 401);
     }

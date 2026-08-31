@@ -13,26 +13,20 @@ import {
   RiskAssessment,
   DRGrade,
   RiskLevel,
+  AIExplanation,
 } from "./types";
 
 const BASE_URL = "/api/backend";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-let _authToken: string | null = null;
-
-export function setAuthToken(token: string | null) {
-  _authToken = token;
-}
-
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((init?.headers as Record<string, string>) || {}),
   };
-  if (_authToken) {
-    headers["Authorization"] = `Bearer ${_authToken}`;
-  }
+  // Auth rides in the httpOnly dr_token cookie set by the backend; the Next.js
+  // /api/backend rewrite forwards it automatically (same origin).
   const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -243,13 +237,8 @@ export async function createScreening(patientId: string, eye: "left" | "right"):
 export async function uploadScreeningImage(screeningId: string, file: File): Promise<{ image_url: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  const headers: Record<string, string> = {};
-  if (_authToken) {
-    headers["Authorization"] = `Bearer ${_authToken}`;
-  }
   const res = await fetch(`${BASE_URL}/screenings/${screeningId}/image`, {
     method: "POST",
-    headers,
     body: formData,
     // Don't set Content-Type — browser sets it with boundary for FormData
   });
@@ -265,6 +254,18 @@ export async function analyzeScreening(screeningId: string): Promise<ScreeningRe
     method: "POST",
   });
   return toScreening(data);
+}
+
+export async function fetchAiExplanation(screeningId: string): Promise<AIExplanation> {
+  const raw = await apiFetch<Record<string, unknown>>(`/screenings/${screeningId}/ai-explanation`, {
+    method: "POST",
+  });
+  return {
+    explanation: (raw.explanation as string) || "",
+    precautions: (raw.precautions as string[]) || [],
+    model: (raw.model as string) || "",
+    source: (raw.source as AIExplanation["source"]) || "fallback",
+  };
 }
 
 export async function fetchReportsSummary(): Promise<{
@@ -296,6 +297,53 @@ export async function fetchReportsSummary(): Promise<{
 /**
  * Convert a data URL (base64) to a File object for upload.
  */
+/**
+ * Finish onboarding for a Google-created account: attach a PHC and clear the
+ * needs_profile flag. The backend refreshes the session cookie in the response.
+ */
+export async function completeProfile(payload: {
+  name?: string;
+  phcName: string;
+  phcCode: string;
+  state: string;
+  district: string;
+  address: string;
+  contactNumber: string;
+}): Promise<{
+  access_token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    provider: string;
+    phc_id: string | null;
+    needs_profile: boolean;
+  };
+}> {
+  return apiFetch<{
+    access_token: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      provider: string;
+      phc_id: string | null;
+      needs_profile: boolean;
+    };
+  }>('/auth/complete-profile', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: payload.name || undefined,
+      phc_name: payload.phcName,
+      phc_code: payload.phcCode,
+      state: payload.state,
+      district: payload.district,
+      address: payload.address,
+      contact_number: payload.contactNumber,
+    }),
+  });
+}
+
 export function dataUrlToFile(dataUrl: string, filename: string): File {
   const [header, data] = dataUrl.split(",");
   const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";

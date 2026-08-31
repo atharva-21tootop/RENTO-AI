@@ -1,10 +1,17 @@
 import io
 import os
+import time
+
+os.environ.setdefault("SMTP_DISABLED", "1")  # tests never hit the real Brevo SMTP server
+
 import sys
 import pytest
 import numpy as np
 import cv2
 from fastapi.testclient import TestClient
+from jose import jwt, jwk
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -22,6 +29,7 @@ def clean_db():
     db = get_db()
     # in-memory sliding window is process-global; isolate per test
     general_limiter._requests.clear()
+    client.cookies.clear()
     db.patients.delete_many({})
     db.screenings.delete_many({})
     db.users.delete_many({})
@@ -54,6 +62,74 @@ def _auth_headers(name="My PHC", code="PHC-A"):
         "role": "phc_staff", "phcId": str(phc_id), "provider": "credentials",
     })
     return {"Authorization": f"Bearer {token}"}
+
+
+def _auth_headers2(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
+# --- Google id_token fixtures (self-signed RS256, JWKS monkeypatched) ---
+
+GOOGLE_AUD = "test-client-id.apps.googleusercontent.com"
+
+_crypto = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+_google_priv_pem = _crypto.private_bytes(
+    serialization.Encoding.PEM,
+    serialization.PrivateFormat.PKCS8,
+    serialization.NoEncryption(),
+)
+_google_pub_jwk = jwk.construct(_google_priv_pem, algorithm="RS256").to_dict()
+_google_pub_jwk["kid"] = "test-key-1"
+
+
+def _sign_id_token(sub, email, name="Google User", aud=GOOGLE_AUD):
+    now = int(time.time())
+    _tok = jwt.encode(
+        {
+            "iss": "https://accounts.google.com",
+            "aud": aud,
+            "sub": sub,
+            "email": email,
+            "email_verified": True,
+            "name": name,
+            "iat": now,
+            "exp": now + 3600,
+        },
+        _google_priv_pem,
+        algorithm="RS256",
+        headers={"kid": "test-key-1"},
+    )
+    return _tok
+
+
+@pytest.fixture()
+def google_oauth(monkeypatch):
+    """Code-flow fixtures: JWKS + client id at the test key, token exchange stubbed."""
+    import app.features.auth.google as g
+    import app.features.auth.routes as routes
+    monkeypatch.setattr(g, "_fetch_jwks", lambda: {"keys": [_google_pub_jwk]})
+    monkeypatch.setattr(g, "GOOGLE_CLIENT_ID", GOOGLE_AUD)
+    monkeypatch.setattr(g, "GOOGLE_CLIENT_SECRET", "test-client-secret")
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", GOOGLE_AUD)
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "test-client-secret")
+    holder = {"token": None, "code": None}
+    monkeypatch.setattr(g, "exchange_code_for_tokens", lambda code: {"id_token": holder["token"]})
+    monkeypatch.setattr(routes, "exchange_code_for_tokens", lambda code: {"id_token": holder["token"]})
+    return holder
+
+
+def _google_callback(google_oauth, sub, email, name="Google User"):
+    """Drive the OAuth redirect flow: /login -> Google -> /callback, returns the callback response."""
+    from urllib.parse import urlparse, parse_qs, quote
+    start = client.get("/api/auth/oauth/google/login?redirect=/dashboard", follow_redirects=False)
+    assert start.status_code in (302, 307)
+    state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+    assert start.cookies.get("oauth_state") == state.split("|")[0]  # cookie mirrors the URL nonce
+    google_oauth["token"] = _sign_id_token(sub, email, name)
+    return client.get(
+        f"/api/auth/oauth/google/callback?code=test-code&state={quote(state)}",
+        follow_redirects=False,
+    )
 
 
 def _make_test_image_bytes(width=800, height=800):
@@ -482,6 +558,61 @@ def test_full_pipeline_e2e():
     assert summary["completed_screenings"] == 1
 
 
+# ── LLM layer (patient explanation + precautions) ──
+
+def _analyzed_screening():
+    p = _create_patient("LLM Patient")
+    s = _create_screening(p["patient_id"])
+    _upload_image(s["screening_id"])
+    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers()).json()
+    assert result["status"] == "completed"
+    return s["screening_id"]
+
+
+def test_ai_explanation_falls_back_without_api_key(monkeypatch):
+    import app.features.screenings.llm as llm
+    monkeypatch.setattr(llm, "GEMINI_API_KEY", "")
+
+    sid = _analyzed_screening()
+    r = client.post(f"/api/screenings/{sid}/ai-explanation", headers=_auth_headers())
+    assert r.status_code == 200
+    data = r.json()
+    assert data["screening_id"] == sid
+    assert data["source"] == "fallback"
+    assert data["explanation"]
+    assert len(data["precautions"]) == 4
+    assert all(isinstance(p, str) and p for p in data["precautions"])
+
+
+def test_ai_explanation_uses_llm_and_tolerates_bad_output(monkeypatch):
+    import app.features.screenings.llm as llm
+    monkeypatch.setattr(llm, "GEMINI_API_KEY", "test-key")
+
+    sid = _analyzed_screening()
+
+    monkeypatch.setattr(llm, "_call_gemini", lambda prompt: '{"explanation": "Friendly text", "precautions": ["A", "B", "C", "D"]}')
+    r = client.post(f"/api/screenings/{sid}/ai-explanation", headers=_auth_headers())
+    assert r.status_code == 200
+    assert r.json()["source"] == "llm"
+    assert r.json()["explanation"] == "Friendly text"
+    assert r.json()["precautions"] == ["A", "B", "C", "D"]
+
+    # garbage from the LLM must fall back, not 500
+    monkeypatch.setattr(llm, "_call_gemini", lambda prompt: "not json at all")
+    r2 = client.post(f"/api/screenings/{sid}/ai-explanation", headers=_auth_headers())
+    assert r2.status_code == 200
+    assert r2.json()["source"] == "fallback"
+
+
+def test_ai_explanation_requires_analyzed_screening():
+    p = _create_patient("NoLLM Patient")
+    s = _create_screening(p["patient_id"])
+    r = client.post(f"/api/screenings/{s['screening_id']}/ai-explanation", headers=_auth_headers())
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "NOT_ANALYZED"
+    assert client.post("/api/screenings/SCR-9999/ai-explanation", headers=_auth_headers()).status_code == 404
+
+
 # ── Auth flow: backend is now the only DB writer ──
 
 def _register_user(monkeypatch, email="staff@example.com", otp="246810"):
@@ -578,17 +709,199 @@ def test_password_reset_flow(monkeypatch):
     assert client.post("/api/auth/login", json={"email": payload["email"], "password": payload["password"]}).status_code == 401
 
 
-def test_google_oauth_upsert():
-    body = {"google_id": "sub-1", "email": "google.user@example.com", "name": "Google User"}
-    r1 = client.post("/api/auth/oauth/google", json=body)
-    assert r1.status_code == 200 and r1.json()["access_token"]
-    assert get_db().users.find_one({"email": body["email"]})["provider"] == "google"
+def test_google_oauth_start_redirects_to_google(google_oauth):
+    r = client.get("/api/auth/oauth/google/login", follow_redirects=False)
+    assert r.status_code == 307
+    loc = r.headers["location"]
+    assert loc.startswith("https://accounts.google.com/o/oauth2/v2/auth")
+    assert "response_type=code" in loc
+    assert f"client_id={GOOGLE_AUD}" in loc
+    assert "redirect_uri=" in loc
+    assert "scope=openid" in loc
 
-    # second login upserts rather than duplicating
-    r2 = client.post("/api/auth/oauth/google", json=body)
-    assert get_db().users.count_documents({"email": body["email"]}) == 1
-    me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {r2.json()['access_token']}"})
+
+def test_google_oauth_upsert(google_oauth):
+    r1 = _google_callback(google_oauth, "sub-1", "google.user@example.com", "Google User")
+    assert r1.status_code == 303
+    assert "http://localhost:3000/onboarding" in r1.headers["location"]
+    assert get_db().users.find_one({"email": "google.user@example.com"})["provider"] == "google"
+
+    # second login upserts rather than duplicating (profile still incomplete -> onboarding again)
+    r2 = _google_callback(google_oauth, "sub-1", "google.user@example.com")
+    assert "http://localhost:3000/onboarding" in r2.headers["location"]
+    assert get_db().users.count_documents({"email": "google.user@example.com"}) == 1
+
+
+def test_google_callback_rejects_bad_token_and_bad_state(google_oauth):
+    from app.core.config import SESSION_COOKIE_NAME
+    from urllib.parse import urlparse, parse_qs
+    # wrong audience (would fail verification) -> bounce back to the SPA login, no user
+    start = client.get("/api/auth/oauth/google/login", follow_redirects=False)
+    state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+    google_oauth["token"] = _sign_id_token("sub-x", "evil@gmail.com", aud="other-client.apps.googleusercontent.com")
+    bad = client.get(f"/api/auth/oauth/google/callback?code=test-code&state={state}", follow_redirects=False)
+    assert bad.status_code == 303
+    assert "error=google_failed" in bad.headers["location"]
+    assert get_db().users.count_documents({}) == 0
+    assert SESSION_COOKIE_NAME not in client.cookies
+    # state mismatch / CSRF (different from the oauth_state cookie) -> 400
+    mismatch = client.get("/api/auth/oauth/google/callback?code=test-code&state=evilstate", follow_redirects=False)
+    assert mismatch.status_code == 400
+    # forger uses no state at all
+    assert client.get("/api/auth/oauth/google/callback?code=test-code", follow_redirects=False).status_code == 400
+    # user cancels at Google
+    denied = client.get("/api/auth/oauth/google/callback?error=access_denied", follow_redirects=False)
+    assert denied.status_code == 303 and "error=google_denied" in denied.headers["location"]
+
+
+def test_google_two_accounts_stay_distinct_and_persist(google_oauth):
+    _google_callback(google_oauth, "sub-a", "a@gmail.com", "A")
+    _google_callback(google_oauth, "sub-b", "b@gmail.com", "B")
+    assert get_db().users.count_documents({}) == 2
+    assert get_db().users.find_one({"email": "a@gmail.com"})["google_id"] == "sub-a"
+
+    # same Google account (same sub) again → same record, no duplicate
+    _google_callback(google_oauth, "sub-a", "a@gmail.com", "A")
+    assert get_db().users.count_documents({"email": "a@gmail.com"}) == 1
+    assert get_db().users.count_documents({}) == 2
+
+
+def test_google_new_user_needs_profile_then_completes(google_oauth):
+    r = _google_callback(google_oauth, "sub-profile", "profile.new@gmail.com", "New P")
+    assert r.status_code == 303
+    assert "http://localhost:3000/onboarding" in r.headers["location"]
+    token = r.cookies["dr_token"]
+    assert get_db().users.find_one({"email": "profile.new@gmail.com"})["needs_profile"] is True
+
+    body = {"name": "New P", "phc_name": "Alandi PHC", "phc_code": "PHC-N1",
+            "state": "Maharashtra", "district": "Pune", "address": "1 Main Road", "contact_number": "9876543210"}
+    r2 = client.post("/api/auth/complete-profile",
+                     headers=_auth_headers2(token), json=body)
+    assert r2.status_code == 200
+    u = r2.json()["user"]
+    assert u["needs_profile"] is False
+    assert u["phc_id"]
+
+    doc = get_db().users.find_one({"email": "profile.new@gmail.com"})
+    from bson import ObjectId
+    assert str(doc["phc_id"]) == u["phc_id"]
+    assert get_db().phcs.find_one({"_id": doc["phc_id"]})
+
+    # Returning Google account: straight to dashboard, no second onboarding.
+    back = _google_callback(google_oauth, "sub-profile", "profile.new@gmail.com", "New P")
+    assert back.status_code == 303 and "http://localhost:3000/dashboard" in back.headers["location"]
+    assert get_db().users.find_one({"email": "profile.new@gmail.com"})["needs_profile"] is False
+
+
+def test_google_existing_registered_user_is_not_flagged(google_oauth):
+    from app.core.security import hash_password
+    db = get_db()
+    db.users.insert_one({
+        "name": "Old Reg", "email": "same.person@gmail.com",
+        "password_hash": hash_password("SomePass123"), "provider": "credentials",
+        "role": "phc_staff", "phc_id": None, "is_verified": True,
+    })
+    r = _google_callback(google_oauth, "sub-same", "same.person@gmail.com", "Old Reg")
+    assert r.status_code == 303 and "http://localhost:3000/dashboard" in r.headers["location"]
+    assert get_db().users.count_documents({"email": "same.person@gmail.com"}) == 1
+
+
+def test_cookie_session_round_trip(google_oauth):
+    """Backend owns the session: the google callback sets an httpOnly dr_token cookie."""
+    from app.core.config import SESSION_COOKIE_NAME
+
+    r = _google_callback(google_oauth, "sub-cookie", "cookie.user@gmail.com", "C")
+    assert SESSION_COOKIE_NAME in r.cookies
+    cookie = r.cookies[SESSION_COOKIE_NAME]
+    assert r.headers.get("set-cookie") and "; httponly" in str(r.headers.get("set-cookie")).lower()
+
+    # /me works with the cookie alone, no Authorization header
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE_NAME, cookie)
+    me = client.get("/api/auth/me")
     assert me.status_code == 200
+    assert me.json()["email"] == "cookie.user@gmail.com"
+
+    # complete-profile refreshes the cookie + clears the needs_profile claim
+    body = {"name": "Cookie", "phc_name": "Cookie PHC", "phc_code": "PHC-C1",
+            "state": "MH", "district": "Pune", "address": "1 Main Road", "contact_number": "9876543210"}
+    r2 = client.post("/api/auth/complete-profile", json=body)
+    assert r2.status_code == 200
+    new_cookie = r2.cookies[SESSION_COOKIE_NAME]
+    assert new_cookie != cookie
+
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE_NAME, new_cookie)
+    me2 = client.get("/api/auth/me")
+    assert me2.status_code == 200 and me2.json()["needs_profile"] is False
+
+    # logout clears the cookie; /me then requires auth
+    lo = client.post("/api/auth/logout")
+    assert lo.status_code == 200
+    client.cookies.clear()
+    assert client.get("/api/auth/me").status_code == 401
+
+
+def test_credentials_login_sets_session_cookie():
+    from app.core.config import SESSION_COOKIE_NAME
+    r = client.post("/api/auth/register", json={
+        "name": "Sess User", "email": "sess.user@example.com", "password": "StrongPass123",
+        "phc_name": "Sess PHC", "phc_code": "PHC-SESS", "state": "MH", "district": "Pune",
+        "address": "1 Main Road", "contact_number": "9876543210",
+    })
+    assert r.status_code == 201
+    uid = r.json()["id"]
+    db = get_db()
+    db.users.update_one({"_id": db.users.find_one({"email": "sess.user@example.com"})["_id"]}, {"$set": {"is_verified": True}})
+
+    r2 = client.post("/api/auth/login", json={"email": "sess.user@example.com", "password": "StrongPass123"})
+    assert r2.status_code == 200
+    assert SESSION_COOKIE_NAME in r2.cookies
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE_NAME, r2.cookies[SESSION_COOKIE_NAME])
+    me = client.get("/api/auth/me")
+    assert me.status_code == 200 and me.json()["id"] == uid
+
+
+def test_smtp_configured_failure_raises_502_not_silent_fallback(monkeypatch):
+    from fastapi import HTTPException
+    from app.features.auth.email import send_email
+    import smtplib
+
+    monkeypatch.setenv("EMAIL_SERVER_HOST", "smtp.example.com")
+    monkeypatch.setenv("EMAIL_SERVER_PORT", "587")
+    monkeypatch.setenv("EMAIL_SERVER_USER", "u")
+    monkeypatch.setenv("EMAIL_SERVER_PASSWORD", "p")
+    monkeypatch.setenv("EMAIL_FROM", "Team <t@example.com>")
+    monkeypatch.delenv("SMTP_DISABLED", raising=False)
+    monkeypatch.delenv("NODE_ENV", raising=False)
+
+    class _FailingServer:
+        def starttls(self, *a, **k):
+            pass
+
+        def login(self, *a, **k):
+            raise smtplib.SMTPAuthenticationError(535, b"bad creds")
+
+        def quit(self):
+            pass
+
+    monkeypatch.setattr("smtplib.SMTP", lambda *a, **k: _FailingServer())
+
+    with pytest.raises(HTTPException) as ei:
+        send_email("to@example.com", "s", "<p>verify</p>", otp_for_dev_only="123456")
+    assert ei.value.status_code == 502
+
+
+def test_smtp_disabled_logs_otp_and_does_not_pretend_to_send(monkeypatch, caplog):
+    from app.features.auth.email import send_email
+
+    monkeypatch.setenv("SMTP_DISABLED", "1")
+    monkeypatch.delenv("NODE_ENV", raising=False)
+    with caplog.at_level("INFO"):
+        ok = send_email("to@example.com", "s", "<p>verify</p>", otp_for_dev_only="999999")
+    assert ok is False
+    assert "999999" in caplog.text
 
 
 # ── Storage gate (Step 11): signed URL or token required ──

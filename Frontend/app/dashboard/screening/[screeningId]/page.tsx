@@ -17,8 +17,8 @@ import {
   Sparkles,
   Printer,
 } from 'lucide-react';
-import { getScreeningResult } from '@/lib/api/screening';
-import { ScreeningResult, DRGrade } from '@/lib/api/types';
+import { getScreeningResult, getAiExplanation } from '@/lib/api/screening';
+import { ScreeningResult, DRGrade, AIExplanation } from '@/lib/api/types';
 
 export default function ScreeningResultPage() {
   const pathname = usePathname();
@@ -29,6 +29,8 @@ export default function ScreeningResultPage() {
   const [screening, setScreening] = useState<ScreeningResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'heatmap' | 'original' | 'split'>('split');
+  const [aiExplanation, setAiExplanation] = useState<AIExplanation | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     async function loadResult() {
@@ -36,6 +38,12 @@ export default function ScreeningResultPage() {
       try {
         const data = await getScreeningResult(screeningId);
         setScreening(data);
+        if (data?.prediction) {
+          setAiLoading(true);
+          const explanation = await getAiExplanation(screeningId);
+          setAiExplanation(explanation);
+          setAiLoading(false);
+        }
       } catch (err) {
         console.error('Failed to load screening result:', err);
       } finally {
@@ -381,6 +389,79 @@ export default function ScreeningResultPage() {
               </div>
             </div>
           )}
+          {/* 5. AI CLINICAL ASSISTANT / PATIENT EXPLANATION */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-teal-600" />
+                  <span>AI Clinical Assistant — Plain-Language Explanation</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  A patient-friendly summary to help explain the AI finding and next steps. Assistive only — it never overrides the clinical grade above.
+                </p>
+              </div>
+
+              {aiExplanation && (
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                  aiExplanation.source === 'llm'
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {aiExplanation.source === 'llm' ? 'AI Generated' : 'Template Fallback'}
+                </span>
+              )}
+            </div>
+
+            <div className="h-px bg-slate-100" />
+
+            {aiLoading ? (
+              <div className="flex items-center gap-3 text-sm text-slate-600 py-4">
+                <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                <span>Generating AI explanation...</span>
+              </div>
+            ) : aiExplanation ? (
+              <>
+                <div className="space-y-3">
+                  <span className="text-xs uppercase font-bold tracking-wider text-slate-500 block">
+                    Explanation
+                  </span>
+                  <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-4">
+                    {aiExplanation.explanation}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <span className="text-xs uppercase font-bold tracking-wider text-slate-500 block">
+                    Precautions & Next Steps
+                  </span>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {aiExplanation.precautions.map((p, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2.5 text-xs text-slate-700 bg-white border border-slate-200 rounded-xl p-3"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {aiExplanation.source === 'fallback' && (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-3">
+                    A live AI model is not configured, so a deterministic template was used. Add a Gemini API key to enable generated explanations.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-slate-500 py-2">
+                The AI explanation could not be loaded for this screening.
+              </p>
+            )}
+          </div>
         </>
       )}
     </div>

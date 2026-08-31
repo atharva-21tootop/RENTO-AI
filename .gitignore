@@ -33,3 +33,8 @@ opencode-log.md
 .opencode/
 graphify-out/
 ._graphify-config.yaml
+
+# ---------- Dev server logs / artifacts ----------
+Frontend/dev.log
+Frontend/.next-dev*.err
+Frontend/.next-dev*.out

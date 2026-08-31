@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "caniuse-lite": "1.0.30001600",
+    "jose": "^6.0.6",
     "lucide-react": "^1.32.0",
     "next": "^15.2.0",
-    "next-auth": "^5.0.0-beta.25",
     "nodemailer": "^8.0.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

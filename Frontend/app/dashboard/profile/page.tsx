@@ -1,12 +1,12 @@
-import { auth } from '@/auth';
+import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import UserProfile from '@/components/dashboard/UserProfile';
 import { User, ShieldCheck, HeartPulse } from 'lucide-react';
 
 export default async function ProfilePage() {
-  const session = await auth();
+  const session = await getSession();
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     redirect('/login');
   }
 
@@ -38,7 +38,7 @@ export default async function ProfilePage() {
           <span>Health Record Privacy & Authentication Security</span>
         </div>
         <p className="text-xs text-zinc-400 leading-relaxed">
-          Your account is secured with Auth.js v5 encrypted session tokens and MongoDB Atlas schema protection. All health screening logs are protected and anonymized before being computed into community health insights.
+          Your account is secured with backend-issued JWT sessions and MongoDB document protection. All health screening logs are protected and anonymized before being computed into community health insights.
         </p>
 
         <div className="pt-3 border-t border-zinc-800/80 flex flex-wrap gap-4 text-xs text-zinc-400">

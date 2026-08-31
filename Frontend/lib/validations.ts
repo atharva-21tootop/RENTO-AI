@@ -54,6 +54,33 @@ export const loginSchema = z.object({
     .min(1, { message: 'Password is required' }),
 });
 
+export const onboardingSchema = z.object({
+  name: z
+    .string()
+    .max(50, { message: 'Name cannot exceed 50 characters' })
+    .optional(),
+  phcName: z
+    .string()
+    .min(2, { message: 'PHC Name must be at least 2 characters' })
+    .max(100, { message: 'PHC Name cannot exceed 100 characters' }),
+  phcCode: z
+    .string()
+    .min(2, { message: 'PHC Code is required' })
+    .max(30, { message: 'PHC Code cannot exceed 30 characters' }),
+  state: z
+    .string()
+    .min(2, { message: 'State is required' }),
+  district: z
+    .string()
+    .min(2, { message: 'District is required' }),
+  address: z
+    .string()
+    .min(5, { message: 'Address must be at least 5 characters' }),
+  contactNumber: z
+    .string()
+    .min(8, { message: 'Contact Number must be at least 8 digits' }),
+});
+
 export const verifyOtpSchema = z.object({
   email: z
     .string()

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
 import { Loader2, Mail, Lock, AlertCircle, Code2, ArrowRight } from 'lucide-react';
 import GoogleButton from './GoogleButton';
 import { loginSchema } from '@/lib/validations';
@@ -22,11 +21,7 @@ export default function LoginForm() {
     password: '',
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    urlError === 'OAuthAccountNotLinked'
-      ? 'To confirm your identity, sign in with the same account you used originally.'
-      : urlError
-      ? 'Authentication failed. Please check your credentials.'
-      : null
+    urlError ? 'Authentication failed. Please check your credentials.' : null
   );
   const [successMessage] = useState<string | null>(
     verifiedParam === 'true'
@@ -56,14 +51,26 @@ export default function LoginForm() {
     try {
       setIsLoading(true);
 
-      const res = await signIn('credentials', {
-        email: formData.email.toLowerCase(),
-        password: formData.password,
-        redirect: false,
+      // POST straight to the backend through the /api/backend rewrite. The
+      // backend owns the session: it sets the httpOnly dr_token cookie in the
+      // response, which the browser stores automatically (same origin).
+      const res = await fetch('/api/backend/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.toLowerCase(),
+          password: formData.password,
+        }),
       });
+      const data = await res.json().catch(() => ({}));
 
-      if (!res || res.error) {
-        setErrorMessage(res?.error || 'Invalid email or password');
+      if (!res.ok) {
+        const msg =
+          data?.detail?.message ||
+          data?.detail ||
+          data?.message ||
+          'Invalid email or password';
+        setErrorMessage(typeof msg === 'string' ? msg : 'Invalid email or password');
         setIsLoading(false);
       } else {
         router.push(callbackUrl);

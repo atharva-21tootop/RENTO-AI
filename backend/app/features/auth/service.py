@@ -1,11 +1,13 @@
 from datetime import datetime, timezone
 
+from bson import ObjectId
 from fastapi import HTTPException
 
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
+from app.core.logging import logger
 from app.utils.mongo_utils import strip_id
-from .schemas import OtpPurpose, UserCreate
+from .schemas import OtpPurpose, UserCreate, CompleteProfileBody, EMAIL_RE
 from . import otp as otp_service
 
 
@@ -20,6 +22,7 @@ def _user_public(doc: dict) -> dict:
         "role": d.get("role", "phc_staff"),
         "phc_id": str(d["phc_id"]) if d.get("phc_id") else None,
         "is_verified": d.get("is_verified", False),
+        "needs_profile": d.get("needs_profile", False),
         "created_at": d.get("created_at"),
     }
 
@@ -32,6 +35,7 @@ def _to_claims(doc: dict) -> dict:
         "role": doc.get("role", "phc_staff"),
         "phcId": str(doc["phc_id"]) if doc.get("phc_id") else None,
         "provider": doc.get("provider", "credentials"),
+        "needs_profile": doc.get("needs_profile", False),
     }
 
 
@@ -136,10 +140,31 @@ def login(email: str, password: str) -> dict:
 
 def google_login(google_id: str, email: str, name: str) -> dict:
     db = get_db()
-    email = (email or "").lower().strip()
-    user = db.users.find_one({"email": email})
+    email = (email or "").strip().lower()
+    google_id = (google_id or "").strip()
+
+    if not email or not EMAIL_RE.match(email):
+        logger.warning(f"google_login rejected: missing/invalid email (google_id={google_id!r})")
+        raise HTTPException(400, "Google account email is missing or invalid. Try again or use email registration.")
+
+    # Resolve by Google's verified account id first so each actual Google account
+    # maps to its own record; fall back to email for accounts created before the
+    # google_id field existed.
+    user = db.users.find_one({"provider": "google", "google_id": google_id})
+    if user is None:
+        logger.info(f"google_login: no doc for sub {google_id!r}; matching by email {email}")
+        user = db.users.find_one({"email": email})
+
     if user:
-        db.users.update_one({"_id": user["_id"]}, {"$set": {"name": name or user.get("name", ""), "is_verified": True}})
+        fields = {
+            "name": name or user.get("name", ""),
+            "is_verified": True,
+            "google_id": google_id,
+        }
+        if user.get("provider") != "google":
+            fields["provider"] = "google"
+        db.users.update_one({"_id": user["_id"]}, {"$set": fields})
+        is_new = False
     else:
         res = db.users.insert_one({
             "name": name or "Google User",
@@ -149,14 +174,58 @@ def google_login(google_id: str, email: str, name: str) -> dict:
             "role": "phc_staff",
             "phc_id": None,
             "is_verified": True,
+            "needs_profile": True,
+            "google_id": google_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
         user = {"_id": res.inserted_id, "email": email, "name": name or "Google User",
-                "provider": "google", "role": "phc_staff", "phc_id": None, "is_verified": True}
+                "provider": "google", "role": "phc_staff", "phc_id": None, "is_verified": True,
+                "needs_profile": True}
+        is_new = True
+
+    logger.info(f"google_login ok: sub={google_id} email={email} user_id={user['_id']} is_new={is_new}")
     return {
         "access_token": create_access_token(_to_claims(user)),
         "token_type": "bearer",
         "user": _user_public(user),
+        "is_new": is_new,
+    }
+
+
+def complete_profile(user_claims: dict, data: CompleteProfileBody) -> dict:
+    """Finish onboarding for a user created via Google OAuth (no PHC yet).
+
+    Creates-or-links their PHC and marks the profile complete. Returns a fresh
+    token so the new phc_id/needs_profile claims take effect immediately.
+    """
+    db = get_db()
+    doc = db.users.find_one({"_id": ObjectId(user_claims["id"])})
+    if not doc:
+        raise HTTPException(404, "User account not found")
+    if doc.get("provider") != "google":
+        raise HTTPException(400, "Profile completion is only for Google sign-in users.")
+
+    phc = db.phcs.find_one({"code": data.phc_code})
+    if not phc:
+        res = db.phcs.insert_one({
+            "name": data.phc_name,
+            "code": data.phc_code,
+            "state": data.state,
+            "district": data.district,
+            "address": data.address,
+            "contact_number": data.contact_number,
+            "healthcare_worker_name": data.name or doc.get("name", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        phc = {"_id": res.inserted_id}
+
+    fields = {"phc_id": phc["_id"], "needs_profile": False, "name": data.name or doc.get("name", "")}
+    db.users.update_one({"_id": doc["_id"]}, {"$set": fields})
+    doc.update(fields)
+    return {
+        "access_token": create_access_token(_to_claims(doc)),
+        "token_type": "bearer",
+        "user": _user_public(doc),
     }
 
 

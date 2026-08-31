@@ -1,8 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Eye,
@@ -26,6 +26,8 @@ interface SidebarNavProps {
 
 export default function SidebarNav({ user, onCloseMobile }: SidebarNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const navItems = [
     {
@@ -151,9 +153,15 @@ export default function SidebarNav({ user, onCloseMobile }: SidebarNavProps) {
           </div>
 
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            title="Sign Out"
-            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+            onClick={async () => {
+              setIsLoggingOut(true);
+              await fetch('/api/backend/auth/logout', { method: 'POST' }).catch(() => {});
+              router.push('/login');
+              router.refresh();
+            }}
+            disabled={isLoggingOut}
+            title={isLoggingOut ? 'Signing out...' : 'Sign Out'}
+            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             <LogOut className="w-4 h-4" />
           </button>

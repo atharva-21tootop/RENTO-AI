@@ -52,6 +52,13 @@ export interface RiskAssessment {
   followUpTimeframe: string;
 }
 
+export interface AIExplanation {
+  explanation: string;
+  precautions: string[];
+  model: string;
+  source: 'llm' | 'fallback';
+}
+
 export interface ScreeningResult {
   screeningId: string;
   patientId: string;

@@ -8,7 +8,77 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // Public-site design tokens (design.md §2). Distinct names so they never
+        // collide with the default Tailwind palette the dashboard still uses
+        // (e.g. teal-600, slate-*, emerald-*). Do NOT override shared palettes.
+        navy: {
+          DEFAULT: '#071A2B',
+          surface: '#0D2638',
+        },
+        electric: '#00C9B7', // Electric Teal
+        vision: '#4DE8FF', // Vision Cyan
+        honey: '#FFCA6B', // Soft Amber
+        snow: '#F7FAFC', // Soft White
+        ink: {
+          DEFAULT: '#102A43', // text-primary
+          soft: '#526777', // text-secondary
+          muted: '#8295A5', // text-muted
+        },
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-space-grotesk)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+      },
+      keyframes: {
+        'fade-up': {
+          '0%': { opacity: '0', transform: 'translateY(24px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'spin-slow': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        'scan-y': {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        'pulse-ring': {
+          '0%': { transform: 'scale(0.9)', opacity: '0.5' },
+          '100%': { transform: 'scale(1.6)', opacity: '0' },
+        },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.55' },
+        },
+        'blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.2' },
+        },
+        'draw': {
+          to: { 'stroke-dashoffset': '0' },
+        },
+      },
+      animation: {
+        'fade-up': 'fade-up 0.6s ease-out both',
+        'fade-in': 'fade-in 0.6s ease-out both',
+        'scale-in': 'scale-in 0.5s ease-out both',
+        'spin-slow': 'spin-slow 8s linear infinite',
+        'scan-y': 'scan-y 2.4s ease-in-out infinite',
+        'pulse-ring': 'pulse-ring 2.4s ease-out infinite',
+        'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
+        'blink': 'blink 1.2s step-end infinite',
+      },
+    },
   },
   plugins: [],
 };

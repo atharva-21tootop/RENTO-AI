@@ -1,10 +1,17 @@
 import re
+import secrets
 from typing import Optional
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field, field_validator
 
-from .schemas import UserCreate, OtpPurpose
+from .schemas import UserCreate, OtpPurpose, CompleteProfileBody
 from app.core.auth import get_current_user
+from app.core.cookies import json_with_cookie, clear_session_cookie, set_session_cookie
+from app.core.config import FRONTEND_ORIGIN, COOKIE_SECURE
+from app.core.logging import logger
+from .google import verify_google_id_token, build_google_auth_uri, exchange_code_for_tokens
+from . import google as google_identity
 from . import service as auth_service
 
 router = APIRouter()
@@ -40,12 +47,6 @@ class LoginBody(_EmailBody):
     password: str = Field(min_length=1)
 
 
-class GoogleOauthBody(BaseModel):
-    google_id: str
-    email: Optional[str] = None
-    name: Optional[str] = None
-
-
 class ForgotPasswordBody(_EmailBody):
     pass
 
@@ -72,12 +73,65 @@ def resend_otp_endpoint(data: ResendOtpBody):
 
 @router.post("/login")
 def login_endpoint(data: LoginBody):
-    return auth_service.login(data.email, data.password)
+    result = auth_service.login(data.email, data.password)
+    return json_with_cookie(result, result["access_token"])
 
 
-@router.post("/oauth/google")
-def google_oauth_endpoint(data: GoogleOauthBody):
-    return auth_service.google_login(data.google_id, data.email or "", data.name or "")
+@router.get("/oauth/google/login")
+def google_login_redirect(request: Request, redirect: str = "/dashboard"):
+    if not google_identity.GOOGLE_CLIENT_ID or not google_identity.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(503, "Google sign-in is not configured.")
+    if not redirect.startswith("/") or redirect == "/":
+        redirect = "/dashboard"
+    # One-time state: nonce in an httpOnly cookie, nonce+landing page in the URL
+    # param; the callback requires the nonces to match. Works through the Next.js
+    # rewrite and across ports (localhost:3000 -> localhost:8000).
+    nonce = secrets.token_urlsafe(16)
+    state = f"{nonce}|{redirect}"
+    res = RedirectResponse(build_google_auth_uri(state))
+    res.set_cookie("oauth_state", nonce, httponly=True, samesite="lax", max_age=600, secure=COOKIE_SECURE)
+    return res
+
+
+@router.get("/oauth/google/callback")
+def google_oauth_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+    login_error = f"{FRONTEND_ORIGIN}/login?error=google_failed"
+    if error:
+        return RedirectResponse(f"{FRONTEND_ORIGIN}/login?error=google_denied", status_code=303)
+    cookie_state = request.cookies.get("oauth_state")
+    sent_nonce = state.split("|")[0] if state else ""
+    if not state or not cookie_state or not secrets.compare_digest(sent_nonce, cookie_state):
+        raise HTTPException(400, "Invalid Google OAuth state.")
+    parts = state.split("|")
+    landing = parts[1] if len(parts) > 1 and parts[1].startswith("/") and parts[1] != "/" else "/dashboard"
+    if not code:
+        return RedirectResponse(login_error, status_code=303)
+
+    try:
+        tokens = exchange_code_for_tokens(code)
+        claims = verify_google_id_token(tokens["id_token"])
+    except (HTTPException, KeyError, TypeError) as e:
+        logger.warning(f"google OAuth callback failed: {e!r}")
+        return RedirectResponse(login_error, status_code=303)
+
+    result = auth_service.google_login(claims["sub"], claims["email"], claims.get("name") or "")
+    path = "/onboarding" if result["user"].get("needs_profile") else landing
+    res = RedirectResponse(f"{FRONTEND_ORIGIN}{path}", status_code=303)
+    set_session_cookie(res, result["access_token"])
+    return res
+
+
+@router.post("/complete-profile")
+def complete_profile_endpoint(data: CompleteProfileBody, user: dict = Depends(get_current_user)):
+    result = auth_service.complete_profile(user, data)
+    return json_with_cookie(result, result["access_token"])
+
+
+@router.post("/logout")
+def logout_endpoint(user: dict = Depends(get_current_user)):
+    res = JSONResponse({"message": "Logged out"})
+    clear_session_cookie(res)
+    return res
 
 
 @router.post("/forgot-password")

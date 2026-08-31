@@ -1,6 +1,6 @@
 import os
 from typing import Dict, Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, Request
 from .schemas import ScreeningCreate, ScreeningResponse
 from .service import (
     create_screening, get_screening, update_screening,
@@ -17,8 +17,10 @@ from .quality import assess_image_quality
 from .inference import run_inference
 from .gradcam import generate_gradcam
 from .risk import map_grade_to_risk, get_poor_image_risk
+from .llm import generate_ai_explanation
 from app.core.config import MAX_UPLOAD_SIZE_MB, GRADE_LABELS, GRADE_DESCRIPTIONS
 from app.core.auth import get_current_user
+from app.core.rate_limiter import general_limiter
 
 router = APIRouter()
 
@@ -153,6 +155,25 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
         "risk": risk,
     }
     return _enrich_screening(result)
+
+
+@router.post("/{screening_id}/ai-explanation")
+def ai_explanation_endpoint(
+    screening_id: str,
+    request: Request,
+    user: dict = Depends(get_current_user),
+):
+    """LLM tier: patient-friendly explanation + precautions for a completed screening."""
+    general_limiter.check(request)
+    screening = get_screening(screening_id)
+    if not screening:
+        raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
+    if not screening.get("prediction"):
+        raise HTTPException(status_code=400, detail={"code": "NOT_ANALYZED", "message": "Run /analyze before requesting an explanation."})
+    enriched = _enrich_screening(screening)
+    result = generate_ai_explanation(enriched)
+    result["screening_id"] = screening_id
+    return result
 
 
 @router.get("/{screening_id}")

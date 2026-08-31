@@ -1,18 +1,21 @@
-import { auth } from '@/auth';
+import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import SidebarNav from '@/components/dashboard/SidebarNav';
 import HeaderNav from '@/components/dashboard/HeaderNav';
-import AuthProvider from '@/components/AuthProvider';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await getSession();
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     redirect('/login');
+  }
+
+  if (session.user.needsProfile) {
+    redirect('/onboarding');
   }
 
   const user = session.user;
@@ -29,7 +32,7 @@ export default async function DashboardLayout({
         <HeaderNav user={user} />
 
         <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </main>
       </div>
     </div>

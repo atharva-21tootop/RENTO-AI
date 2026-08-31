@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
-import AuthProvider from '@/components/providers/AuthProvider';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' });
 
 export const metadata: Metadata = {
   title: 'RetinoCare PHC - AI Diabetic Retinopathy Screening',
@@ -20,9 +20,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${inter.className} min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-teal-600 selection:text-white`}
+        className={`${inter.variable} ${spaceGrotesk.variable} min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-teal-600 selection:text-white`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </body>
     </html>
   );

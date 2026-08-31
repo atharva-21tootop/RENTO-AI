@@ -14,6 +14,7 @@ class User(BaseModel):
     role: str = "phc_staff"
     phc_id: Optional[str] = None
     is_verified: bool = False
+    needs_profile: bool = False
     created_at: datetime
 
 
@@ -49,7 +50,23 @@ class UserPublic(BaseModel):
     role: str
     phc_id: Optional[str] = None
     is_verified: bool
+    needs_profile: bool = False
     created_at: datetime
+
+
+class CompleteProfileBody(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=2, max_length=50)
+    phc_name: str = Field(min_length=2, max_length=100)
+    phc_code: str = Field(min_length=2, max_length=30)
+    state: str = Field(min_length=2)
+    district: str = Field(min_length=2)
+    address: str = Field(min_length=5)
+    contact_number: str = Field(min_length=8)
+
+    @field_validator("phc_code")
+    @classmethod
+    def _upper_code(cls, v: str) -> str:
+        return v.upper().strip()
 
 
 class OtpPurpose(str, Enum):

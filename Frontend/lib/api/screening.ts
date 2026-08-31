@@ -1,8 +1,9 @@
-import { ScreeningResult, ScreeningFilters } from './types';
+import { ScreeningResult, ScreeningFilters, AIExplanation } from './types';
 import {
   runFullScreening,
   fetchScreeningResult,
   fetchScreenings,
+  fetchAiExplanation,
 } from './backendClient';
 
 /**
@@ -22,6 +23,15 @@ export async function getScreeningResult(screeningId: string): Promise<Screening
   try {
     return await fetchScreeningResult(screeningId);
   } catch {
+    return null;
+  }
+}
+
+export async function getAiExplanation(screeningId: string): Promise<AIExplanation | null> {
+  try {
+    return await fetchAiExplanation(screeningId);
+  } catch (err) {
+    console.error('Failed to load AI explanation:', err);
     return null;
   }
 }
