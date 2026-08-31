@@ -24,6 +24,8 @@ backend/storage/heatmaps/
 # ---------- ML model weights (large binaries — ship via releases) ----------
 *.pth
 *.pt
+!backend/app/model/checkpoints/best_model.pth
+!backend/app/model/nvidia_efficientnet-b0_210412.pth
 
 # ---------- Tooling / OS ----------
 .DS_Store

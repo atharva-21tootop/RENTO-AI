@@ -222,7 +222,7 @@ def create_model(checkpoint_path=None):
     # --------------------------------------------------------
 
     model = models.efficientnet_b0(
-        weights=EfficientNet_B0_Weights.IMAGENET1K_V1,
+        weights=None,
     )
 
     # Replace classifier head for 5 DR classes
