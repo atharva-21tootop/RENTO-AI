@@ -4,7 +4,7 @@ from bson import ObjectId
 from fastapi import HTTPException
 
 from app.core.database import get_db
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_and_update_password, create_access_token
 from app.core.logging import logger
 from app.utils.mongo_utils import strip_id
 from .schemas import OtpPurpose, UserCreate, CompleteProfileBody, EMAIL_RE
@@ -130,8 +130,15 @@ def resend_otp(email: str, purpose: OtpPurpose) -> str:
 def login(email: str, password: str) -> dict:
     db = get_db()
     user = db.users.find_one({"email": email.lower().strip()})
-    if not user or not verify_password(password, user.get("password_hash", "")):
+    if not user or not user.get("password_hash"):
         raise HTTPException(401, "Invalid email or password")
+    ok, new_hash = verify_and_update_password(password, user.get("password_hash", ""))
+    if not ok:
+        raise HTTPException(401, "Invalid email or password")
+    if new_hash:
+        # Transparently rehash (rounds 12 -> 10) so slow logins on existing
+        # accounts speed up after their first successful sign-in.
+        db.users.update_one({"_id": user["_id"]}, {"$set": {"password_hash": new_hash}})
     if not user.get("is_verified"):
         raise HTTPException(403, "Please verify your email address before logging in.")
     return {

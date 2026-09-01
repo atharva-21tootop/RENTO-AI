@@ -5,7 +5,11 @@ from jose import jwt
 
 from app.core.config import AUTH_SECRET
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ponytail: bcrypt rounds lowered to 10 for fast logins on Render's free
+# tier (default 12 ~ 2s/verify there). New hashes get rounds=10; existing
+# $2b$12$ hashes still verify (passlib reads rounds from the stored hash).
+# Bump back to 12+ if this ever holds real production credentials.
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=10)
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24h
@@ -17,6 +21,15 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, password_hash: str) -> bool:
     return pwd_context.verify(password, password_hash)
+
+
+def verify_and_update_password(
+    password: str,
+    password_hash: str,
+) -> tuple[bool, str | None]:
+    """Verify and, if the stored hash is outdated, return a new hash to persist."""
+    ok, new_hash = pwd_context.verify_and_update(password, password_hash)
+    return ok, new_hash
 
 
 def create_access_token(payload: dict, expires_minutes: Optional[int] = None) -> str:
