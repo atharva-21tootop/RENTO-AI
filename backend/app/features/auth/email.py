@@ -63,7 +63,7 @@ def send_email(to: str, subject: str, html: str, otp_for_dev_only: str = "") -> 
         msg.attach(MIMEText(html, "html"))
 
         if port == 465:
-            server = smtplib.SMTP_SSL(host, port, context=ssl.create_default_context())
+            server = smtplib.SMTP_SSL(host, port, timeout=15, context=ssl.create_default_context())
         else:
             server = smtplib.SMTP(host, port, timeout=15)
             server.starttls(context=ssl.create_default_context())
