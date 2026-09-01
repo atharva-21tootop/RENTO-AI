@@ -102,12 +102,21 @@ function toImageQuality(raw: Record<string, unknown> | null): ImageQualityCheck 
 function toPrediction(raw: Record<string, unknown> | null): DRPrediction | undefined {
   if (!raw) return undefined;
   const confidence = raw.confidence as number;
+  const probabilities = raw.probabilities as Record<string, number> | undefined;
   return {
     grade: (raw.grade as DRGrade) || 0,
     label: (raw.label as DRPrediction["label"]) || "No DR",
     description: (raw.description as string) || "",
     // Backend returns 0-1 decimal, frontend expects percentage (0-100)
     confidence: confidence <= 1 ? Math.round(confidence * 1000) / 10 : confidence,
+    probabilities: probabilities
+      ? Object.fromEntries(
+          Object.entries(probabilities).map(([k, v]) => [
+            k,
+            v <= 1 ? Math.round(v * 1000) / 10 : v,
+          ]),
+        )
+      : undefined,
   };
 }
 

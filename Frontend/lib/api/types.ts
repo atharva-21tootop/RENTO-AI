@@ -41,6 +41,7 @@ export interface DRPrediction {
   label: 'No DR' | 'Mild DR' | 'Moderate DR' | 'Severe DR' | 'Proliferative DR';
   description: string;
   confidence: number; // percentage e.g. 91.5
+  probabilities?: Record<string, number>; // per-class confidence 0-100
 }
 
 export type RiskLevel = 'LOW RISK' | 'MONITOR' | 'HIGH RISK' | 'URGENT' | 'RECAPTURE';

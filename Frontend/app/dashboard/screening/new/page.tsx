@@ -149,7 +149,7 @@ export default function NewScreeningPage() {
       setAnalysisStep('Checking image quality (blur, contrast, illumination)...');
       
       await new Promise((r) => setTimeout(r, 900));
-      setAnalysisStep('Running PyTorch CNN AI DR screening & Grad-CAM analysis...');
+      setAnalysisStep('Running EfficientNet DR screening & Grad-CAM analysis...');
       
       await new Promise((r) => setTimeout(r, 1000));
 
@@ -208,7 +208,7 @@ export default function NewScreeningPage() {
 
             <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2 text-left">
               <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
-              <span>Automated image quality validation & Grad-CAM neural network evaluation in progress.</span>
+              <span>Automated image quality validation & EfficientNet Grad-CAM neural network evaluation in progress.</span>
             </div>
           </div>
         </div>
@@ -228,10 +228,10 @@ export default function NewScreeningPage() {
               <button
                 type="button"
                 onClick={() => setShowQuickRegister(!showQuickRegister)}
-                className="text-xs font-semibold text-teal-700 hover:text-teal-900 flex items-center gap-1"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 transition-all hover:brightness-105"
               >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>{showQuickRegister ? 'Select Existing' : '+ Register New'}</span>
+                <PlusCircle className="w-4 h-4" />
+                <span>{showQuickRegister ? 'Select Existing' : '+ Register New Patient'}</span>
               </button>
             </div>
 
@@ -480,7 +480,7 @@ export default function NewScreeningPage() {
                   : 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-600/20'
               }`}
             >
-              <span>Analyze Retinal Image with AI</span>
+              <span>Analyze Retinal Image with EfficientNet</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

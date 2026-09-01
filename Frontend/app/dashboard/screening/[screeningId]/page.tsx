@@ -89,6 +89,23 @@ export default function ScreeningResultPage() {
     { grade: 4, name: 'Proliferative', description: 'Neovascularization' },
   ];
 
+  const findingsForGrade = (grade: DRGrade): string[] => {
+    switch (grade) {
+      case 0:
+        return ['No microaneurysms detected', 'No retinal hemorrhages', 'Optic disc, macula & blood vessels appear within normal limits'];
+      case 1:
+        return ['Microaneurysms (localized capillary dilations) detected', 'Minimal dot hemorrhages present', 'No hard exudates or venous beading observed'];
+      case 2:
+        return ['Multiple microaneurysms detected', 'Dot & blot retinal hemorrhages present', 'Hard exudates (lipid deposits) found', 'Mild venous changes possible'];
+      case 3:
+        return ['Intraretinal hemorrhages in more than 2 quadrants', 'Cotton wool spots (soft exudates) present', 'Venous beading detected', 'Intraretinal microvascular abnormalities (IRMA) present'];
+      case 4:
+        return ['Neovascularization on the optic disc and/or retina', 'Vitreous / pre-retinal hemorrhage risk', 'Fibrous tissue proliferation detected'];
+      default:
+        return [];
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Top Header & Patient Summary */}
@@ -225,6 +242,57 @@ export default function ScreeningResultPage() {
                   {prediction.confidence}%
                 </span>
               </div>
+            </div>
+
+            {/* Detected Findings - why this grade was predicted */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-teal-600" />
+                <h4 className="text-sm font-bold text-slate-900">
+                  Detected Findings — Why this was flagged as {prediction.label}
+                </h4>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {findingsForGrade(prediction.grade).map((finding, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2 text-xs text-slate-700 bg-white border border-slate-200 rounded-lg p-2.5"
+                  >
+                    <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">
+                      ✓
+                    </span>
+                    <span>{finding}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {prediction.probabilities && (
+                <div className="pt-1">
+                  <span className="text-[11px] uppercase font-bold tracking-wider text-slate-500 block mb-2">
+                    Model Probability Distribution
+                  </span>
+                  <div className="space-y-1.5">
+                    {Object.entries(prediction.probabilities)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([cls, prob]) => (
+                        <div key={cls} className="flex items-center gap-2 text-xs">
+                          <span className="w-28 shrink-0 text-slate-600 font-medium text-right pr-1">
+                            {cls}
+                          </span>
+                          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-teal-500 rounded-full"
+                              style={{ width: `${Math.max(1, Math.min(100, prob))}%` }}
+                            />
+                          </div>
+                          <span className="w-12 shrink-0 text-slate-700 font-mono font-semibold">
+                            {prob}%
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* DR Severity Scale 0 - 4 */}
