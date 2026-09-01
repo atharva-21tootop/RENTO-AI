@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, User, Building2, Phone, MapPin, ArrowRight, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { registerSchema } from '@/lib/validations';
 
 export default function RegisterForm() {
   const router = useRouter();

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Mail, Lock, AlertCircle, Code2, ArrowRight } from 'lucide-react';
+import { loginSchema } from '@/lib/validations';
 
 export default function LoginForm() {
   const router = useRouter();
