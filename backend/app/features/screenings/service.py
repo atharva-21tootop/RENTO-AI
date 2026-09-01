@@ -1,17 +1,21 @@
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Tuple
 from app.core.database import get_db
+from app.utils.mongo_utils import strip_id
 
 
 def _generate_screening_id() -> str:
     db = get_db()
-    counter = db.counters.find_one_and_update(
-        {"_id": "screening_id"},
-        {"$inc": {"seq": 1}},
-        upsert=True,
-        return_document=True,
-    )
-    return f"SCR-{counter['seq']:04d}"
+    while True:
+        counter = db.counters.find_one_and_update(
+            {"_id": "screening_id"},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=True,
+        )
+        sid = f"SCR-{counter['seq']:04d}"
+        if not db.screenings.find_one({"screening_id": sid}):
+            return sid
 
 
 from bson import ObjectId
@@ -31,7 +35,7 @@ def create_screening(patient_id: str, eye: str, phc_id: Optional[str] = None) ->
         "prediction": None,
         "explanation": None,
         "risk": None,
-        "phc_id": ObjectId(phc_id) if phc_id else None,
+        "phc_id": str(phc_id) if phc_id else None,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     db.screenings.insert_one(screening)
@@ -40,7 +44,8 @@ def create_screening(patient_id: str, eye: str, phc_id: Optional[str] = None) ->
 
 def get_screening(screening_id: str) -> Optional[Dict]:
     db = get_db()
-    return db.screenings.find_one({"screening_id": screening_id}, {"_id": 0})
+    screening = db.screenings.find_one({"screening_id": screening_id})
+    return strip_id(screening) if screening else None
 
 
 def update_screening(screening_id: str, update_data: Dict) -> None:
@@ -61,7 +66,7 @@ def list_screenings(
     db = get_db()
     if not phc_id:
         return [], 0
-    query = {"phc_id": ObjectId(phc_id)}
+    query = {"phc_id": str(phc_id)}
     if patient_id:
         query["patient_id"] = patient_id
     if grade is not None:
@@ -72,9 +77,10 @@ def list_screenings(
         query.setdefault("created_at", {})["$gte"] = date_from
     if date_to:
         query.setdefault("created_at", {})["$lte"] = date_to
+    from app.utils.mongo_utils import strip_id
     total = db.screenings.count_documents(query)
     skip = (page - 1) * limit
-    items = list(db.screenings.find(query, {"_id": 0}).skip(skip).limit(limit).sort("created_at", -1))
+    items = [strip_id(doc) for doc in db.screenings.find(query).skip(skip).limit(limit).sort("created_at", -1)]
     return items, total
 
 

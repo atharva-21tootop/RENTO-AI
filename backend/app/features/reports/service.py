@@ -15,7 +15,7 @@ def get_report_summary(phc_id: Optional[str] = None) -> dict:
         }
 
     db = get_db()
-    q = {"phc_id": ObjectId(phc_id)}
+    q = {"phc_id": str(phc_id)}
 
     total_patients = db.patients.count_documents(q)
     total_screenings = db.screenings.count_documents(q)

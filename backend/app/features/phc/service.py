@@ -22,7 +22,20 @@ def _require_phc(phc_id):
         raise HTTPException(status_code=404, detail="No PHC associated with this account")
     from bson import ObjectId
     db = get_db()
-    phc = db.phcs.find_one({"_id": ObjectId(phc_id)})
+    obj_id = None
+    if isinstance(phc_id, ObjectId):
+        obj_id = phc_id
+    elif isinstance(phc_id, str) and len(phc_id) == 24:
+        try:
+            obj_id = ObjectId(phc_id)
+        except Exception:
+            pass
+    
+    query = {"$or": [{"_id": phc_id}]}
+    if obj_id:
+        query["$or"].append({"_id": obj_id})
+        
+    phc = db.phcs.find_one(query)
     if not phc:
         raise HTTPException(status_code=404, detail="No associated PHC profile found")
     return db, phc

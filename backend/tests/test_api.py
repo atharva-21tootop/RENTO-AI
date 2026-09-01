@@ -47,19 +47,36 @@ def clean_db():
 
 def _auth_headers(name="My PHC", code="PHC-A"):
     db = get_db()
-    phc_id = db.phcs.insert_one({
-        "name": name, "code": code, "state": "MH", "district": "Pune",
-        "address": "Street 1", "contact_number": "9876543210",
-        "healthcare_worker_name": "Worker",
-    }).inserted_id
-    user_id = db.users.insert_one({
-        "name": "Test User", "email": "phc-test@example.com",
-        "password_hash": "x", "provider": "credentials", "role": "phc_staff",
-        "phc_id": phc_id, "is_verified": True,
-    }).inserted_id
+    existing_user = db.users.find_one({"email": "phc-test@example.com"})
+    if existing_user:
+        user_id = str(existing_user["_id"])
+        phc_id = existing_user.get("phc_id")
+        if not phc_id:
+            phc_id_obj = db.phcs.insert_one({
+                "name": name, "code": code, "state": "MH", "district": "Pune",
+                "address": "Street 1", "contact_number": "9876543210",
+                "healthcare_worker_name": "Worker",
+            }).inserted_id
+            phc_id = str(phc_id_obj)
+            db.users.update_one({"_id": existing_user["_id"]}, {"$set": {"phc_id": phc_id}})
+        else:
+            phc_id = str(phc_id)
+    else:
+        phc_id_obj = db.phcs.insert_one({
+            "name": name, "code": code, "state": "MH", "district": "Pune",
+            "address": "Street 1", "contact_number": "9876543210",
+            "healthcare_worker_name": "Worker",
+        }).inserted_id
+        phc_id = str(phc_id_obj)
+        user_id_obj = db.users.insert_one({
+            "name": "Test User", "email": "phc-test@example.com",
+            "password_hash": "x", "provider": "credentials", "role": "phc_staff",
+            "phc_id": phc_id, "is_verified": True,
+        }).inserted_id
+        user_id = str(user_id_obj)
     token = create_access_token({
-        "id": str(user_id), "email": "phc-test@example.com", "name": "Test User",
-        "role": "phc_staff", "phcId": str(phc_id), "provider": "credentials",
+        "id": user_id, "email": "phc-test@example.com", "name": "Test User",
+        "role": "phc_staff", "phcId": phc_id, "phc_id": phc_id, "provider": "credentials",
     })
     return {"Authorization": f"Bearer {token}"}
 
@@ -210,7 +227,7 @@ def test_list_patients_pagination():
     headers = _auth_headers()
     for i in range(5):
         client.post("/api/patients", json={"name": f"Patient {i}", "age": 40 + i, "gender": "male"}, headers=headers)
-    r = client.get("/api/patients?page=1&limit=2")
+    r = client.get("/api/patients?page=1&limit=2", headers=headers)
     data = r.json()
     assert len(data["items"]) == 2
     assert data["total"] == 5
@@ -221,30 +238,32 @@ def test_list_patients_search():
     headers = _auth_headers()
     client.post("/api/patients", json={"name": "Alice Smith", "age": 45, "gender": "female"}, headers=headers)
     client.post("/api/patients", json={"name": "Bob Jones", "age": 55, "gender": "male"}, headers=headers)
-    r = client.get("/api/patients?search=alice")
+    r = client.get("/api/patients?search=alice", headers=headers)
     data = r.json()
     assert data["total"] == 1
     assert data["items"][0]["name"] == "Alice Smith"
 
 
 def test_get_patient():
-    p = _create_patient("Jane")
-    r = client.get(f"/api/patients/{p['patient_id']}")
+    headers = _auth_headers()
+    p = _create_patient("Jane", headers=headers)
+    r = client.get(f"/api/patients/{p['patient_id']}", headers=headers)
     assert r.status_code == 200
     assert r.json()["name"] == "Jane"
 
 
 def test_get_patient_not_found():
-    r = client.get("/api/patients/P-9999")
+    r = client.get("/api/patients/P-9999", headers=_auth_headers())
     assert r.status_code == 404
     assert r.json()["detail"]["code"] == "PATIENT_NOT_FOUND"
 
 
 def test_patient_screenings():
-    p = _create_patient("Bob")
-    _create_screening(p["patient_id"])
-    _create_screening(p["patient_id"], "right")
-    r = client.get(f"/api/patients/{p['patient_id']}/screenings")
+    headers = _auth_headers()
+    p = _create_patient("Bob", headers=headers)
+    _create_screening(p["patient_id"], headers=headers)
+    _create_screening(p["patient_id"], "right", headers=headers)
+    r = client.get(f"/api/patients/{p['patient_id']}/screenings", headers=headers)
     assert r.status_code == 200
     assert len(r.json()) == 2
 
@@ -279,7 +298,7 @@ def test_list_screenings_pagination():
     p = _create_patient()
     for _ in range(5):
         _create_screening(p["patient_id"])
-    r = client.get("/api/screenings?page=1&limit=2")
+    r = client.get("/api/screenings?page=1&limit=2", headers=_auth_headers())
     data = r.json()
     assert len(data["items"]) == 2
     assert data["total"] == 5
@@ -292,7 +311,7 @@ def test_list_screenings_filter_by_patient():
     _create_screening(p1["patient_id"])
     _create_screening(p1["patient_id"])
     _create_screening(p2["patient_id"])
-    r = client.get(f"/api/screenings?patient_id={p1['patient_id']}")
+    r = client.get(f"/api/screenings?patient_id={p1['patient_id']}", headers=_auth_headers())
     assert r.json()["total"] == 2
 
 
@@ -301,7 +320,7 @@ def test_list_screenings_filter_by_grade():
     s = _create_screening(p["patient_id"])
     _upload_image(s["screening_id"])
     client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers())
-    r = client.get("/api/screenings?grade=0")
+    r = client.get("/api/screenings?grade=0", headers=_auth_headers())
     assert r.status_code == 200
 
 
@@ -433,7 +452,7 @@ def test_get_result():
     s = _create_screening(p["patient_id"])
     _upload_image(s["screening_id"])
     client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers())
-    r = client.get(f"/api/screenings/{s['screening_id']}")
+    r = client.get(f"/api/screenings/{s['screening_id']}", headers=_auth_headers())
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "completed"
@@ -446,7 +465,7 @@ def test_get_result():
 
 
 def test_get_screening_not_found():
-    r = client.get("/api/screenings/SCR-9999")
+    r = client.get("/api/screenings/SCR-9999", headers=_auth_headers())
     assert r.status_code == 404
 
 
@@ -470,7 +489,7 @@ def test_reports_summary():
     s = _create_screening(p["patient_id"])
     _upload_image(s["screening_id"])
     client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers())
-    r = client.get("/api/reports/summary")
+    r = client.get("/api/reports/summary", headers=_auth_headers())
     assert r.status_code == 200
     data = r.json()
     assert data["total_patients"] == 1
@@ -481,7 +500,7 @@ def test_reports_summary():
 
 
 def test_reports_summary_empty():
-    r = client.get("/api/reports/summary")
+    r = client.get("/api/reports/summary", headers=_auth_headers())
     assert r.status_code == 200
     data = r.json()
     assert data["total_patients"] == 0
@@ -541,30 +560,33 @@ def test_heatmap_accessible():
 # ── Full Pipeline Integration ──
 
 def test_full_pipeline_e2e():
-    p = _create_patient("E2E Patient")
-    s = _create_screening(p["patient_id"], "right")
-    _upload_image(s["screening_id"])
-    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers()).json()
+    headers = _auth_headers()
+    p = _create_patient("E2E Patient", headers=headers)
+    s = _create_screening(p["patient_id"], "right", headers=headers)
+    _upload_image(s["screening_id"], headers=headers)
+    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=headers).json()
     assert result["status"] == "completed"
-    final = client.get(f"/api/screenings/{s['screening_id']}").json()
+    final = client.get(f"/api/screenings/{s['screening_id']}", headers=headers).json()
     assert final["status"] == "completed"
     assert final["prediction"]["grade"] in range(5)
     assert final["explanation"]["heatmap_url"]
     assert final["risk"]["level"]
-    patient_screenings = client.get(f"/api/patients/{p['patient_id']}/screenings").json()
+    patient_screenings = client.get(f"/api/patients/{p['patient_id']}/screenings", headers=headers).json()
     assert len(patient_screenings) == 1
-    summary = client.get("/api/reports/summary").json()
+    summary = client.get("/api/reports/summary", headers=headers).json()
     assert summary["total_patients"] == 1
     assert summary["completed_screenings"] == 1
 
 
 # ── LLM layer (patient explanation + precautions) ──
 
-def _analyzed_screening():
-    p = _create_patient("LLM Patient")
-    s = _create_screening(p["patient_id"])
-    _upload_image(s["screening_id"])
-    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers()).json()
+def _analyzed_screening(headers=None):
+    if headers is None:
+        headers = _auth_headers()
+    p = _create_patient("LLM Patient", headers=headers)
+    s = _create_screening(p["patient_id"], headers=headers)
+    _upload_image(s["screening_id"], headers=headers)
+    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=headers).json()
     assert result["status"] == "completed"
     return s["screening_id"]
 
@@ -573,8 +595,9 @@ def test_ai_explanation_falls_back_without_api_key(monkeypatch):
     import app.features.screenings.llm as llm
     monkeypatch.setattr(llm, "GEMINI_API_KEY", "")
 
-    sid = _analyzed_screening()
-    r = client.post(f"/api/screenings/{sid}/ai-explanation", headers=_auth_headers())
+    headers = _auth_headers()
+    sid = _analyzed_screening(headers=headers)
+    r = client.post(f"/api/screenings/{sid}/ai-explanation", headers=headers)
     assert r.status_code == 200
     data = r.json()
     assert data["screening_id"] == sid
@@ -941,19 +964,21 @@ def _make_non_fundus_bytes():
 
 
 def test_quality_good_image_includes_fundus_structure():
-    p = _create_patient()
-    s = _create_screening(p["patient_id"])
-    _upload_image(s["screening_id"])
-    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=_auth_headers()).json()
+    headers = _auth_headers()
+    p = _create_patient(headers=headers)
+    s = _create_screening(p["patient_id"], headers=headers)
+    _upload_image(s["screening_id"], headers=headers)
+    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=headers).json()
     assert data["status"] == "good"
     assert data["checks"]["fundus_structure"] is True
 
 
 def test_quality_rejects_non_fundus_image():
-    p = _create_patient()
-    s = _create_screening(p["patient_id"])
-    _upload_image(s["screening_id"], _make_non_fundus_bytes())
-    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=_auth_headers()).json()
+    headers = _auth_headers()
+    p = _create_patient(headers=headers)
+    s = _create_screening(p["patient_id"], headers=headers)
+    _upload_image(s["screening_id"], _make_non_fundus_bytes(), headers=headers)
+    data = client.post(f"/api/screenings/{s['screening_id']}/quality", headers=headers).json()
     assert data["status"] == "poor"
     assert data["action"] == "recapture"
     assert data["checks"]["fundus_structure"] is False
@@ -965,10 +990,11 @@ def test_analyze_rejects_non_fundus_without_running_inference(monkeypatch):
         raise AssertionError("run_inference must never be called for a non-fundus image")
     monkeypatch.setattr("app.features.screenings.routes.run_inference", _explode)
 
-    p = _create_patient()
-    s = _create_screening(p["patient_id"])
-    _upload_image(s["screening_id"], _make_non_fundus_bytes())
-    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=_auth_headers()).json()
+    headers = _auth_headers()
+    p = _create_patient(headers=headers)
+    s = _create_screening(p["patient_id"], headers=headers)
+    _upload_image(s["screening_id"], _make_non_fundus_bytes(), headers=headers)
+    result = client.post(f"/api/screenings/{s['screening_id']}/analyze", headers=headers).json()
 
     assert result["status"] == "quality_failed"
     assert result["risk"]["level"] == "recapture"

@@ -36,6 +36,7 @@ def _to_claims(doc: dict) -> dict:
         "name": doc.get("name", ""),
         "role": doc.get("role", "phc_staff"),
         "phcId": phc_id,
+        "phc_id": phc_id,
         "provider": doc.get("provider", "credentials"),
         "needs_profile": bool(doc.get("needs_profile", False)) or (phc_id is None),
     }

@@ -25,11 +25,14 @@ from app.core.rate_limiter import general_limiter
 router = APIRouter()
 
 
+from app.utils.mongo_utils import strip_id
+
+
 def _enrich_screening(screening: Dict, patient: Optional[Dict] = None) -> Dict:
     """Add patient details and prediction metadata to a screening."""
     if patient is None:
         patient = get_patient(screening["patient_id"])
-    enriched = dict(screening)
+    enriched = strip_id(dict(screening))
     if patient:
         enriched["patient_name"] = patient["name"]
         enriched["patient_age"] = patient["age"]
@@ -58,7 +61,7 @@ def create_screening_endpoint(data: ScreeningCreate, user: dict = Depends(get_cu
 
 
 @router.post("/{screening_id}/image")
-async def upload_image_endpoint(screening_id: str, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+def upload_image_endpoint(screening_id: str, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
@@ -66,7 +69,7 @@ async def upload_image_endpoint(screening_id: str, file: UploadFile = File(...),
     if file.content_type not in ["image/jpeg", "image/jpg", "image/png"]:
         raise HTTPException(status_code=415, detail={"code": "UNSUPPORTED_TYPE", "message": "Only JPG, JPEG, and PNG are supported"})
 
-    file_bytes = await file.read()
+    file_bytes = file.file.read()
     max_bytes = MAX_UPLOAD_SIZE_MB * 1024 * 1024
     if len(file_bytes) > max_bytes:
         raise HTTPException(status_code=413, detail={"code": "FILE_TOO_LARGE", "message": f"File exceeds {MAX_UPLOAD_SIZE_MB}MB limit"})
