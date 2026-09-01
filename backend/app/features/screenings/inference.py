@@ -21,6 +21,7 @@ def get_model():
         raise FileNotFoundError(f"DR checkpoint not found at {CHECKPOINT_PATH}")
     _ensure_src_importable()
     import torch
+    torch.set_num_threads(1)
     from model import create_model
     model = create_model(checkpoint_path=str(CHECKPOINT_PATH))
     model.eval()

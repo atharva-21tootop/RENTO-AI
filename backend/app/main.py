@@ -2,6 +2,15 @@ import os
 import time
 from pathlib import Path
 from contextlib import asynccontextmanager
+
+# ponytail: Render free tier has a 512Mi RAM cap; torch/OpenMP/MKL thread
+# pools default to (#cores) threads and can push inference OOM. Pin single
+# thread BEFORE torch gets imported by the feature routers below so native
+# libs allocate the smaller pool. Revisit if switching to a paid instance.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse

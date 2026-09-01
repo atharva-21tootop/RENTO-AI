@@ -46,4 +46,11 @@ def generate_gradcam(image_path: str, screening_id: str) -> str:
     output_path = os.path.join(HEATMAP_DIR, output_filename)
     Image.fromarray(overlay).save(output_path)
 
+    # ponytail: gradcam holds Float32 intermediates at full image
+    # resolution; free them right away to keep peak RSS under Render's
+    # 512Mi cap across back-to-back analyzes.
+    del cam, heatmap, overlay, image, input_tensor, model
+    import gc
+    gc.collect()
+
     return sign_url("heatmaps", output_filename)
