@@ -1,8 +1,6 @@
-import smtplib
+import json
 import os
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import urllib.request
 from email.utils import parseaddr
 
 from fastapi import HTTPException
@@ -30,54 +28,54 @@ def build_otp_email_html(otp: str, purpose: str) -> str:
 
 
 def send_email(to: str, subject: str, html: str, otp_for_dev_only: str = "") -> bool:
-    """Send an email via the configured SMTP provider.
+    """Send an email via the Brevo REST API (HTTPS, no SMTP port needed).
 
-    - When EMAIL_SERVER_* is configured, a failure to send RAISES a visible
+    - When BREVO_API_KEY is configured, a failure to send RAISES a visible
       error (HTTP 502) so callers never silently "succeed" without delivering.
-    - When SMTP is genuinely unconfigured (or SMTP_DISABLED=1) in non-production,
-      the OTP is logged to the terminal as an explicit dev aid — it is clearly
-      not an email send.
+    - When Brevo is genuinely unconfigured (or SMTP_DISABLED=1) in non-production,
+      the OTP is logged to the terminal as an explicit dev aid.
     """
-    host = os.getenv("EMAIL_SERVER_HOST")
-    port = int(os.getenv("EMAIL_SERVER_PORT") or "587")
-    user = os.getenv("EMAIL_SERVER_USER")
-    pwd = os.getenv("EMAIL_SERVER_PASSWORD")
+    api_key = os.getenv("BREVO_API_KEY") or os.getenv("EMAIL_SERVER_PASSWORD")
     from_addr = os.getenv("EMAIL_FROM") or "noreply@hackathonstarter.com"
     envelope_from = parseaddr(from_addr)[1] or from_addr
-    configured = bool(host and user and pwd) and os.getenv("SMTP_DISABLED") != "1"
+    configured = bool(api_key) and os.getenv("SMTP_DISABLED") != "1"
 
     if not configured:
         if os.getenv("NODE_ENV") != "production":
             _log_dev(to, subject, otp_for_dev_only)
         else:
-            logger.warning("SMTP settings are not configured. Email was not sent.")
+            logger.warning("Brevo API key is not configured. Email was not sent.")
         return False
 
+    body = json.dumps({
+        "sender": {"name": parseaddr(from_addr)[0] or "NetraCare", "email": envelope_from},
+        "to": [{"email": to}],
+        "subject": subject,
+        "htmlContent": html,
+        "textContent": html.replace("<[^>]*>", ""),
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "api-key": api_key,
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = from_addr
-        msg["To"] = to
-        plain = html.replace("<[^>]*>", "")
-        msg.attach(MIMEText(plain, "plain"))
-        msg.attach(MIMEText(html, "html"))
-
-        if port == 465:
-            server = smtplib.SMTP_SSL(host, port, timeout=15, context=ssl.create_default_context())
-        else:
-            server = smtplib.SMTP(host, port, timeout=15)
-            server.starttls(context=ssl.create_default_context())
-        server.login(user, pwd)
-        server.sendmail(envelope_from, [to], msg.as_string())
-        server.quit()
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            if resp.status >= 300:
+                raise RuntimeError(f"Brevo API returned HTTP {resp.status}: {resp.read().decode()}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send email via SMTP ({host}:{port}) to {to}: {e}")
+        logger.error(f"Failed to send email via Brevo API to {to}: {e}")
         raise HTTPException(
             status_code=502,
             detail=(
-                "Failed to send the OTP email. Check the backend SMTP settings "
-                "(EMAIL_SERVER_* / SMTP credentials) — the email was NOT sent."
+                "Failed to send the OTP email. Check the backend Brevo settings "
+                "(BREVO_API_KEY / verified sender) — the email was NOT sent."
             ),
         ) from e
 
