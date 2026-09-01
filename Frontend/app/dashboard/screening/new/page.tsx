@@ -389,6 +389,15 @@ export default function NewScreeningPage() {
               </div>
             )}
 
+            {/* Always-mounted file input so "Change Image" works once a preview exists */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
+              className="hidden"
+            />
+
             {!imagePreview ? (
               <div
                 onDragOver={(e) => {
@@ -410,14 +419,6 @@ export default function NewScreeningPage() {
                     : 'border-slate-300 hover:border-teal-500 hover:bg-slate-50'
                 }`}
               >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png"
-                  onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
-                  className="hidden"
-                />
-
                 <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center mx-auto mb-3">
                   <UploadCloud className="w-7 h-7" />
                 </div>
