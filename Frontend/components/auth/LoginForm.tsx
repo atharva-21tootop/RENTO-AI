@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Mail, Lock, AlertCircle, Code2, ArrowRight } from 'lucide-react';
-import GoogleButton from './GoogleButton';
-import { loginSchema } from '@/lib/validations';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -202,20 +200,6 @@ export default function LoginForm() {
       </form>
 
       {/* Divider */}
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-200 dark:border-zinc-800"></div>
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white dark:bg-zinc-900 px-3 text-zinc-400 font-medium">
-            OR
-          </span>
-        </div>
-      </div>
-
-      {/* Google OAuth Button */}
-      <GoogleButton text="Continue with Google" callbackUrl={callbackUrl} />
-
       {/* Footer Link */}
       <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
         Don&apos;t have an account?{' '}
