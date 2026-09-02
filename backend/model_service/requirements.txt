@@ -6,5 +6,6 @@ torchvision
 opencv-python-headless
 numpy
 pillow
+certifi
 python-dotenv
 pytest
