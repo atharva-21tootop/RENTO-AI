@@ -151,10 +151,11 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_ERROR", "message": "Model service returned an error"})
 
     from app.features.screenings.image import save_heatmap
+    from .risk import map_grade_to_risk
     heatmap_url = save_heatmap(result.get("heatmap_b64"), screening_id) if result.get("heatmap_b64") else None
 
     prediction = result["prediction"]
-    risk = result["risk"]
+    risk = map_grade_to_risk(int(prediction.get("grade", 0)))
 
     update_screening(screening_id, {
         "status": "completed",

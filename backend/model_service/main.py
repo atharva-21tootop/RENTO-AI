@@ -66,8 +66,7 @@ def predict(req: PredictRequest):
     import io
     import torch
     from PIL import Image
-    from inference import get_transform, predict_dr
-    from app.features.screenings.risk import map_grade_to_risk
+    from inference import get_transform
 
     try:
         raw = base64.b64decode(req.image_b64)
@@ -146,7 +145,6 @@ def predict(req: PredictRequest):
         "status": "completed",
         "prediction": prediction,
         "explanation": None,
-        "risk": map_grade_to_risk(grade),
         "heatmap_b64": heatmap_b64,
     }
 
