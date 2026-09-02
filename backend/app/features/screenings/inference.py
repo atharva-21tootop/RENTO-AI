@@ -30,6 +30,11 @@ def get_model():
     return model
 
 
+def clear_model():
+    """Release the cached model so its memory can be reclaimed."""
+    get_model.cache_clear()
+
+
 def _get_device():
     import torch
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
