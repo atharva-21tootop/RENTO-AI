@@ -1,4 +1,5 @@
 import os
+import gc
 from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, Request
 from .schemas import ScreeningCreate, ScreeningResponse
@@ -7,15 +8,6 @@ from .service import (
     list_screenings, get_patients_batch,
 )
 from ..patients.service import get_patient
-from .image import (
-    generate_safe_filename,
-    save_image,
-    get_image_url,
-    validate_image,
-)
-from .quality import assess_image_quality
-from .inference import run_inference
-from .gradcam import generate_gradcam
 from .risk import map_grade_to_risk, get_poor_image_risk
 from .llm import generate_ai_explanation
 from app.core.config import MAX_UPLOAD_SIZE_MB, GRADE_LABELS, GRADE_DESCRIPTIONS
@@ -62,6 +54,7 @@ def create_screening_endpoint(data: ScreeningCreate, user: dict = Depends(get_cu
 
 @router.post("/{screening_id}/image")
 def upload_image_endpoint(screening_id: str, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    from .image import generate_safe_filename, save_image, get_image_url, validate_image
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
@@ -92,6 +85,7 @@ def upload_image_endpoint(screening_id: str, file: UploadFile = File(...), user:
 
 @router.post("/{screening_id}/quality")
 def quality_check_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
+    from .quality import assess_image_quality
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
@@ -106,6 +100,9 @@ def quality_check_endpoint(screening_id: str, user: dict = Depends(get_current_u
 
 @router.post("/{screening_id}/analyze")
 def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
+    from .quality import assess_image_quality
+    from .inference import run_inference, clear_model
+    from .gradcam import generate_gradcam
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
@@ -137,6 +134,9 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
     except Exception as e:
         update_screening(screening_id, {"status": "failed"})
         raise HTTPException(status_code=503, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": "AI model or Grad-CAM service failed"})
+    finally:
+        clear_model()
+        gc.collect()
 
     risk = map_grade_to_risk(prediction["grade"])
 

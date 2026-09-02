@@ -24,7 +24,7 @@ GOOGLE_REDIRECT_URI = os.getenv(
 # LLM layer (optional): Gemini via REST. Falls back to a deterministic template
 # when no key is set or the API call fails.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("AI_API_KEY") or os.getenv("LLM_API_KEY") or ""
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.6-flash")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.5-flash")
 
 # Session cookie (backend-issued httpOnly token, proxied through the SPA origin)
 SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "dr_token")
