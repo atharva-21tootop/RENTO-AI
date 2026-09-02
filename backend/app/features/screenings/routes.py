@@ -1,5 +1,6 @@
 import os
-import gc
+import json
+import sys
 from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, Request
 from .schemas import ScreeningCreate, ScreeningResponse
@@ -8,7 +9,6 @@ from .service import (
     list_screenings, get_patients_batch,
 )
 from ..patients.service import get_patient
-from .risk import map_grade_to_risk, get_poor_image_risk
 from .llm import generate_ai_explanation
 from app.core.config import MAX_UPLOAD_SIZE_MB, GRADE_LABELS, GRADE_DESCRIPTIONS
 from app.core.auth import get_current_user
@@ -100,51 +100,50 @@ def quality_check_endpoint(screening_id: str, user: dict = Depends(get_current_u
 
 @router.post("/{screening_id}/analyze")
 def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
-    from .quality import assess_image_quality
-    from .inference import run_inference, clear_model
-    from .gradcam import generate_gradcam
+    import subprocess
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
     if not screening.get("image_path"):
         raise HTTPException(status_code=400, detail={"code": "NO_IMAGE", "message": "No image uploaded for this screening"})
 
-    update_screening(screening_id, {"status": "quality_checking"})
-    quality = assess_image_quality(screening["image_path"])
-    update_screening(screening_id, {"image_quality": quality})
+    update_screening(screening_id, {"status": "ai_processing"})
 
-    if quality["status"] == "poor":
-        risk = get_poor_image_risk()
-        update_screening(screening_id, {"status": "quality_failed", "risk": risk})
+    worker = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "scripts", "analyze_worker.py")
+    try:
+        proc = subprocess.run(
+            [sys.executable, worker, screening["image_path"], screening_id],
+            capture_output=True, text=True, timeout=120,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(proc.stderr[:500] if proc.stderr else "worker exited non-zero")
+        worker_result = json.loads(proc.stdout.strip().split("\n")[-1])
+    except subprocess.TimeoutExpired:
+        update_screening(screening_id, {"status": "failed"})
+        raise HTTPException(status_code=503, detail={"code": "AI_TIMEOUT", "message": "AI analysis timed out"})
+    except Exception as e:
+        update_screening(screening_id, {"status": "failed"})
+        raise HTTPException(status_code=503, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"AI worker failed: {str(e)[:200]}"})
+
+    if worker_result["status"] == "quality_failed":
+        update_screening(screening_id, {"status": "quality_failed", "image_quality": worker_result["quality"], "risk": worker_result["risk"]})
         result = {
             "screening_id": screening_id,
             "patient_id": screening["patient_id"],
             "eye": screening["eye"],
             "status": "quality_failed",
             "image_url": screening.get("image_url"),
-            "image_quality": quality,
-            "risk": risk,
+            "image_quality": worker_result["quality"],
+            "risk": worker_result["risk"],
         }
         return _enrich_screening(result)
 
-    update_screening(screening_id, {"status": "ai_processing"})
-    try:
-        prediction = run_inference(screening["image_path"])
-        heatmap_url = generate_gradcam(screening["image_path"], screening_id)
-    except Exception as e:
-        update_screening(screening_id, {"status": "failed"})
-        raise HTTPException(status_code=503, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": "AI model or Grad-CAM service failed"})
-    finally:
-        clear_model()
-        gc.collect()
-
-    risk = map_grade_to_risk(prediction["grade"])
-
     update_screening(screening_id, {
         "status": "completed",
-        "prediction": prediction,
-        "explanation": {"heatmap_url": heatmap_url},
-        "risk": risk,
+        "prediction": worker_result["prediction"],
+        "explanation": worker_result["explanation"],
+        "risk": worker_result["risk"],
+        "image_quality": worker_result["quality"],
     })
 
     result = {
@@ -153,10 +152,10 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
         "eye": screening["eye"],
         "status": "completed",
         "image_url": screening.get("image_url"),
-        "image_quality": quality,
-        "prediction": prediction,
-        "explanation": {"heatmap_url": heatmap_url},
-        "risk": risk,
+        "image_quality": worker_result["quality"],
+        "prediction": worker_result["prediction"],
+        "explanation": worker_result["explanation"],
+        "risk": worker_result["risk"],
     }
     return _enrich_screening(result)
 
