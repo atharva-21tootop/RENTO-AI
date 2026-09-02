@@ -110,14 +110,26 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
     update_screening(screening_id, {"status": "ai_processing"})
 
     worker = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "scripts", "analyze_worker.py")
+    gradcam_worker = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "scripts", "gradcam_worker.py")
     try:
         proc = subprocess.run(
-            [sys.executable, worker, screening["image_path"], screening_id],
+            [sys.executable, worker, screening["image_path"]],
             capture_output=True, text=True, timeout=120,
         )
         if proc.returncode != 0:
             raise RuntimeError(proc.stderr[:500] if proc.stderr else "worker exited non-zero")
         worker_result = json.loads(proc.stdout.strip().split("\n")[-1])
+
+        heatmap_url = None
+        if worker_result["status"] == "completed":
+            gc_proc = subprocess.run(
+                [sys.executable, gradcam_worker, screening["image_path"], screening_id],
+                capture_output=True, text=True, timeout=90,
+            )
+            if gc_proc.returncode == 0:
+                gc_result = json.loads(gc_proc.stdout.strip().split("\n")[-1])
+                if gc_result.get("status") == "ok":
+                    heatmap_url = gc_result["heatmap_url"]
     except subprocess.TimeoutExpired:
         update_screening(screening_id, {"status": "failed"})
         raise HTTPException(status_code=503, detail={"code": "AI_TIMEOUT", "message": "AI analysis timed out"})
@@ -141,7 +153,7 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
     update_screening(screening_id, {
         "status": "completed",
         "prediction": worker_result["prediction"],
-        "explanation": worker_result["explanation"],
+        "explanation": {"heatmap_url": heatmap_url},
         "risk": worker_result["risk"],
         "image_quality": worker_result["quality"],
     })
@@ -154,7 +166,7 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
         "image_url": screening.get("image_url"),
         "image_quality": worker_result["quality"],
         "prediction": worker_result["prediction"],
-        "explanation": worker_result["explanation"],
+        "explanation": {"heatmap_url": heatmap_url},
         "risk": worker_result["risk"],
     }
     return _enrich_screening(result)

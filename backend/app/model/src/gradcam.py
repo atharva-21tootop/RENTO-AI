@@ -8,8 +8,6 @@ from PIL import Image
 
 from torchvision import transforms
 
-import cv2
-
 from model import create_model
 
 
