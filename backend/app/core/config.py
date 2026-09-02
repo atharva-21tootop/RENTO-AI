@@ -26,6 +26,9 @@ GOOGLE_REDIRECT_URI = os.getenv(
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("AI_API_KEY") or os.getenv("LLM_API_KEY") or ""
 LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.5-flash")
 
+# Standalone model service (separate Render instance) that runs torch inference.
+MODEL_SERVICE_URL = os.getenv("MODEL_SERVICE_URL", "http://localhost:8100").rstrip("/")
+
 # Session cookie (backend-issued httpOnly token, proxied through the SPA origin)
 SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "dr_token")
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"

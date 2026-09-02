@@ -1,7 +1,8 @@
 import os
 import io
+import base64
 from PIL import Image
-from app.core.config import UPLOAD_DIR
+from app.core.config import UPLOAD_DIR, HEATMAP_DIR
 from app.core.signed_url import sign_url
 
 
@@ -32,3 +33,16 @@ def validate_image(file_bytes: bytes, content_type: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def save_heatmap(heatmap_b64: str, screening_id: str) -> str:
+    """Save a base64 heatmap PNG returned by the model service and return its
+    signed URL."""
+    if not heatmap_b64:
+        return None
+    raw = base64.b64decode(heatmap_b64)
+    os.makedirs(HEATMAP_DIR, exist_ok=True)
+    filename = f"{screening_id}.png"
+    with open(os.path.join(HEATMAP_DIR, filename), "wb") as f:
+        f.write(raw)
+    return sign_url("heatmaps", filename)

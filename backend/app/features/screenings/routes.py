@@ -1,6 +1,5 @@
 import os
 import json
-import sys
 from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Depends, Request
 from .schemas import ScreeningCreate, ScreeningResponse
@@ -18,6 +17,14 @@ router = APIRouter()
 
 
 from app.utils.mongo_utils import strip_id
+
+
+def image_path_to_abs(image_path: str) -> str:
+    """Resolve a 'storage/uploads/x.jpg' relative path to an absolute path
+    under the backend directory."""
+    from app.core.config import UPLOAD_DIR
+    candidate = os.path.join(UPLOAD_DIR, os.path.basename(image_path))
+    return candidate if os.path.exists(candidate) else None
 
 
 def _enrich_screening(screening: Dict, patient: Optional[Dict] = None) -> Dict:
@@ -100,76 +107,74 @@ def quality_check_endpoint(screening_id: str, user: dict = Depends(get_current_u
 
 @router.post("/{screening_id}/analyze")
 def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
-    import subprocess
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
     if not screening.get("image_path"):
         raise HTTPException(status_code=400, detail={"code": "NO_IMAGE", "message": "No image uploaded for this screening"})
 
+    image_abs = image_path_to_abs(screening["image_path"])
+    if not image_abs or not os.path.exists(image_abs):
+        raise HTTPException(status_code=422, detail={"code": "IMAGE_MISSING", "message": "Image file missing on server"})
+
     update_screening(screening_id, {"status": "ai_processing"})
 
-    worker = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "scripts", "analyze_worker.py")
-    gradcam_worker = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "scripts", "gradcam_worker.py")
-    try:
-        proc = subprocess.run(
-            [sys.executable, worker, screening["image_path"]],
-            capture_output=True, text=True, timeout=120,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(proc.stderr[:500] if proc.stderr else "worker exited non-zero")
-        worker_result = json.loads(proc.stdout.strip().split("\n")[-1])
+    # Call the standalone model service (separate Render instance) over HTTP.
+    # ponytail: blocking urllib call. If analyze traffic grows, move to an
+    # async job queue; for an MVP single-request blocking is fine.
+    import base64
+    import urllib.request
+    from app.core.config import MODEL_SERVICE_URL
 
-        heatmap_url = None
-        if worker_result["status"] == "completed":
-            gc_proc = subprocess.run(
-                [sys.executable, gradcam_worker, screening["image_path"], screening_id],
-                capture_output=True, text=True, timeout=90,
-            )
-            if gc_proc.returncode == 0:
-                gc_result = json.loads(gc_proc.stdout.strip().split("\n")[-1])
-                if gc_result.get("status") == "ok":
-                    heatmap_url = gc_result["heatmap_url"]
-    except subprocess.TimeoutExpired:
+    try:
+        with open(image_abs, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+
+        body = json.dumps({"image_b64": img_b64, "screening_id": screening_id}).encode()
+        req = urllib.request.Request(
+            MODEL_SERVICE_URL + "/predict",
+            data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        resp = urllib.request.urlopen(req, timeout=150)
+        result = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode()[:200]
         update_screening(screening_id, {"status": "failed"})
-        raise HTTPException(status_code=503, detail={"code": "AI_TIMEOUT", "message": "AI analysis timed out"})
+        raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service error {e.code}: {detail}"})
     except Exception as e:
         update_screening(screening_id, {"status": "failed"})
-        raise HTTPException(status_code=503, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"AI worker failed: {str(e)[:200]}"})
+        raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service unreachable: {str(e)[:200]}"})
 
-    if worker_result["status"] == "quality_failed":
-        update_screening(screening_id, {"status": "quality_failed", "image_quality": worker_result["quality"], "risk": worker_result["risk"]})
-        result = {
-            "screening_id": screening_id,
-            "patient_id": screening["patient_id"],
-            "eye": screening["eye"],
-            "status": "quality_failed",
-            "image_url": screening.get("image_url"),
-            "image_quality": worker_result["quality"],
-            "risk": worker_result["risk"],
-        }
-        return _enrich_screening(result)
+    if result.get("status") != "completed":
+        update_screening(screening_id, {"status": "failed"})
+        raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_ERROR", "message": "Model service returned an error"})
+
+    from app.features.screenings.image import save_heatmap
+    heatmap_url = save_heatmap(result.get("heatmap_b64"), screening_id) if result.get("heatmap_b64") else None
+
+    prediction = result["prediction"]
+    risk = result["risk"]
 
     update_screening(screening_id, {
         "status": "completed",
-        "prediction": worker_result["prediction"],
+        "prediction": prediction,
         "explanation": {"heatmap_url": heatmap_url},
-        "risk": worker_result["risk"],
-        "image_quality": worker_result["quality"],
+        "risk": risk,
     })
 
-    result = {
+    result_payload = {
         "screening_id": screening_id,
         "patient_id": screening["patient_id"],
         "eye": screening["eye"],
         "status": "completed",
         "image_url": screening.get("image_url"),
-        "image_quality": worker_result["quality"],
-        "prediction": worker_result["prediction"],
+        "image_quality": screening.get("image_quality"),
+        "prediction": prediction,
         "explanation": {"heatmap_url": heatmap_url},
-        "risk": worker_result["risk"],
+        "risk": risk,
     }
-    return _enrich_screening(result)
+    return _enrich_screening(result_payload)
 
 
 @router.post("/{screening_id}/ai-explanation")

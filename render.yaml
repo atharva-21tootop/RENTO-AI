@@ -1,12 +1,34 @@
 services:
+  # ── Main backend API (auth, CRUD, storage) ──
   - type: web
     name: netracare-backend
     env: python
     rootDir: backend
-    buildCommand: "pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu"
+    buildCommand: "pip install --no-cache-dir -r requirements.txt"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_NAME
         value: dr_screening
       - key: COOKIE_SECURE
         value: "true"
+      - key: MODEL_SERVICE_URL
+        value: "https://netracare-model.onrender.com"
+
+  # ── Standalone DR model service (torch + EfficientNet + GradCAM) ──
+  # rootDir = backend so the whole app/ tree (model + checkpoints) is deployed;
+  # the entry point lives in model_service/main.py.
+  - type: web
+    name: netracare-model
+    env: python
+    rootDir: backend
+    buildCommand: "pip install --no-cache-dir -r model_service/requirements.txt && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu"
+    startCommand: "uvicorn model_service.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MKL_NUM_THREADS
+        value: "1"
+      - key: OPENBLAS_NUM_THREADS
+        value: "1"
+      - key: AUTH_SECRET
+        value: "model-service-internal-key"
