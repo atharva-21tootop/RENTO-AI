@@ -95,6 +95,8 @@ def predict(req: PredictRequest):
     probs = torch.softmax(output, dim=1)
     probs_np = probs[0].cpu().numpy()
     grade = int(np.argmax(probs_np))
+    # Free inference temporaries BEFORE GradCAM so the two don't stack in RAM.
+    del output, probs, input_tensor
 
     from app.core.config import GRADE_LABELS
     prediction = {
@@ -109,47 +111,49 @@ def predict(req: PredictRequest):
             )
         },
     }
+    del probs_np
 
-    # ---- GradCAM ----
+    # ---- GradCAM heatmap ----
+    # ponytail: GradCAM needs ~120MB on top of the cached model, right at the
+    # 512Mi free-tier ceiling. Preloading the model at startup (lifespan) means
+    # the 192MB torch import + 203MB model load happen once, not per request, so
+    # each request only sees forward + GradCAM. Set MODEL_SERVICE_GEN_HEATMAP=0
+    # to run prediction-only if a specific instance still OOMs.
     heatmap_b64 = None
-    try:
+    if os.getenv("MODEL_SERVICE_GEN_HEATMAP", "1") == "1":
+        import gc
         from gradcam import GradCAM
 
-        input_tensor = transform(image).unsqueeze(0).to(device)
-        input_tensor.requires_grad_()
-        target_layer = model.features[-1][0]
-
-        with torch.no_grad():
-            predicted = model(input_tensor).argmax(dim=1).item()
-
-        gc_inst = GradCAM(model=model, target_layer=target_layer)
         try:
-            cam = gc_inst.generate(input_tensor, predicted)
-        finally:
-            gc_inst.close()
+            gc_input = transform(image).unsqueeze(0).to(device)
+            gc_input.requires_grad_()
+            target_layer = model.features[-1][0]
 
-        # Heatmap as PNG (pure numpy/PIL, no cv2)
-        cam_np = cam  # (H,W) float 0-1
-        cam_img = Image.fromarray((np.clip(cam_np, 0, 1) * 255).astype(np.uint8)).resize(
-            (width, height), Image.BILINEAR
-        )
-        heat_rgb = _jet(np.array(cam_img))
-        orig_np = np.array(image.resize((width, height))).astype(np.float32)
-        overlay = np.clip(orig_np * 0.6 + heat_rgb * 0.4, 0, 255).astype(np.uint8)
+            gc_inst = GradCAM(model=model, target_layer=target_layer)
+            try:
+                cam = gc_inst.generate(gc_input, grade)
+            finally:
+                gc_inst.close()
+            del gc_input
 
-        buf = io.BytesIO()
-        Image.fromarray(overlay).save(buf, format="PNG")
-        heatmap_b64 = base64.b64encode(buf.getvalue()).decode()
+            # Heatmap as PNG (pure numpy/PIL, no cv2)
+            cam_np = cam  # (H,W) float 0-1
+            cam_img = Image.fromarray((np.clip(cam_np, 0, 1) * 255).astype(np.uint8)).resize(
+                (width, height), Image.BILINEAR
+            )
+            heat_rgb = _jet(np.array(cam_img))
+            orig_np = np.array(image.resize((width, height))).astype(np.float32)
+            overlay = np.clip(orig_np * 0.6 + heat_rgb * 0.4, 0, 255).astype(np.uint8)
 
-        del cam, cam_img, heat_rgb, orig_np, overlay, input_tensor
-        # never delete model — cached for next request
-        if device.type == "cpu":
-            torch.cuda.empty_cache() if torch.cuda.is_available() else None
-        import gc as _gc
-        _gc.collect()
-    except Exception:
-        # GradCAM is best-effort; never fail the whole prediction for it
-        traceback.print_exc()
+            buf = io.BytesIO()
+            Image.fromarray(overlay).save(buf, format="PNG")
+            heatmap_b64 = base64.b64encode(buf.getvalue()).decode()
+
+            del cam, cam_img, heat_rgb, orig_np, overlay
+            gc.collect()
+        except Exception:
+            # GradCAM is best-effort; never fail the whole prediction for it
+            traceback.print_exc()
 
     return {
         "status": "completed",
