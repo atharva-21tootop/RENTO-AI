@@ -145,28 +145,50 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
     # ponytail: blocking urllib call. If analyze traffic grows, move to an
     # async job queue; for an MVP single-request blocking is fine.
     import base64
+    import time
     import urllib.request
     from app.core.config import MODEL_SERVICE_URL
 
-    try:
-        with open(image_abs, "rb") as f:
-            img_b64 = base64.b64encode(f.read()).decode()
+    with open(image_abs, "rb") as f:
+        img_b64 = base64.b64encode(f.read()).decode()
 
-        body = json.dumps({"image_b64": img_b64, "screening_id": screening_id}).encode()
+    body = json.dumps({"image_b64": img_b64, "screening_id": screening_id}).encode()
+    # ponytail: Render free-tier model service idles to sleep and returns 429
+    # while it cold-starts (torch load can take ~30-60s). Retry a few times so
+    # the first real call rides through the wake-up. If the instance is just
+    # slow to serve, later retries succeed.
+    result = None
+    last_error = None
+    for attempt in range(3):
         req = urllib.request.Request(
             MODEL_SERVICE_URL + "/predict",
             data=body,
             headers={"Content-Type": "application/json"},
         )
-        resp = urllib.request.urlopen(req, timeout=150)
-        result = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode()[:200]
+        try:
+            resp = urllib.request.urlopen(req, timeout=150)
+            result = json.loads(resp.read().decode())
+            last_error = None
+            break
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode()[:200]
+            if e.code in (429, 502, 503) and attempt < 2:
+                last_error = f"{e.code}: {detail}"
+                time.sleep(5 * (attempt + 1))
+                continue
+            update_screening(screening_id, {"status": "failed"})
+            raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service error {e.code}: {detail}"})
+        except Exception as e:
+            if attempt < 2:
+                last_error = str(e)[:200]
+                time.sleep(5 * (attempt + 1))
+                continue
+            update_screening(screening_id, {"status": "failed"})
+            raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service unreachable: {str(e)[:200]}"})
+
+    if result is None:
         update_screening(screening_id, {"status": "failed"})
-        raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service error {e.code}: {detail}"})
-    except Exception as e:
-        update_screening(screening_id, {"status": "failed"})
-        raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service unreachable: {str(e)[:200]}"})
+        raise HTTPException(status_code=502, detail={"code": "AI_SERVICE_UNAVAILABLE", "message": f"Model service unreachable after retries: {last_error}"})
 
     if result.get("status") != "completed":
         update_screening(screening_id, {"status": "failed"})

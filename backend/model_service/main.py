@@ -50,6 +50,27 @@ def _load_model():
     _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = BACKEND_DIR / "app" / "model" / "checkpoints" / "best_model.pth"
     _model = create_model(checkpoint_path=str(ckpt)).to(_device).eval()
+    _warm_up(_model)
+
+
+def _warm_up(model):
+    """Run a dummy forward+backward at startup so torch allocates its thread
+    pools and memory graph while the fresh 512Mi instance still has headroom,
+    instead of spiking (and OOM-crashing) on the first real request."""
+    try:
+        import torch
+        x = torch.zeros(1, 3, 224, 224).to(_device)
+        with torch.no_grad():
+            model(x)
+        x.requires_grad_()
+        out = model(x)
+        out.sum().backward()
+        del out, x
+        import gc
+        gc.collect()
+    except Exception:
+        # Warm-up is best-effort; never block startup on it.
+        pass
 
 
 @asynccontextmanager
