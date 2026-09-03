@@ -119,6 +119,7 @@ def predict(req: PredictRequest):
     # the 192MB torch import + 203MB model load happen once, not per request, so
     # each request only sees forward + GradCAM. Set MODEL_SERVICE_GEN_HEATMAP=0
     # to run prediction-only if a specific instance still OOMs.
+    gradcam_error = None
     heatmap_b64 = None
     if os.getenv("MODEL_SERVICE_GEN_HEATMAP", "1") == "1":
         import gc
@@ -143,7 +144,7 @@ def predict(req: PredictRequest):
             )
             heat_rgb = _jet(np.array(cam_img))
             orig_np = np.array(image.resize((width, height))).astype(np.float32)
-            overlay = np.clip(orig_np * 0.6 + heat_rgb * 0.4, 0, 255).astype(np.uint8)
+            overlay = np.clip(orig_np * 0.6 + heat_rgb * 255 * 0.4, 0, 255).astype(np.uint8)
 
             buf = io.BytesIO()
             Image.fromarray(overlay).save(buf, format="PNG")
@@ -151,15 +152,17 @@ def predict(req: PredictRequest):
 
             del cam, cam_img, heat_rgb, orig_np, overlay
             gc.collect()
-        except Exception:
-            # GradCAM is best-effort; never fail the whole prediction for it
+        except Exception as gradcam_exc:
             traceback.print_exc()
+            heatmap_b64 = None
+            gradcam_error = str(gradcam_exc)
 
     return {
         "status": "completed",
         "prediction": prediction,
         "explanation": None,
         "heatmap_b64": heatmap_b64,
+        "gradcam_error": gradcam_error,
     }
 
 

@@ -47,25 +47,24 @@ export default function PatientRegistrationPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <UserPlus className="w-6 h-6 text-teal-600" />
-            <span>Patient Registration</span>
+      <div className="flex items-center justify-between pb-4 border-b border-line-200">
+        <div className="border-l-[3px] border-petrol-600 pl-3 py-0.5">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight flex items-center gap-2">
+            <span>Patient registration</span>
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 mt-1">
             Register a diabetic patient at the Primary Health Centre for DR screening.
           </p>
         </div>
 
         <Link
           href="/dashboard/patients"
-          className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 px-3 py-1.5 rounded-lg flex items-center gap-1"
+          className="text-xs font-semibold text-slate-600 hover:text-ink-900 bg-mist-100 px-3 py-1.5 rounded-lg border border-line-200 flex items-center gap-1"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Patient List</span>
+          <span>Patient list</span>
         </Link>
       </div>
 
@@ -77,33 +76,33 @@ export default function PatientRegistrationPage() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+      <form onSubmit={handleSubmit} className="bg-paper-0 p-6 rounded-xl border border-line-200 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Full Name *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Full name *</label>
             <input
               type="text"
               required
               placeholder="e.g. Savitri Devi"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Patient ID (Optional / Auto-generated)</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Patient ID (optional / auto-generated)</label>
             <input
               type="text"
               placeholder="e.g. PAT-2026-0895"
               value={patientIdInput}
               onChange={(e) => setPatientIdInput(e.target.value)}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 font-mono text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Age (Years) *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Age (years) *</label>
             <input
               type="number"
               required
@@ -112,16 +111,16 @@ export default function PatientRegistrationPage() {
               placeholder="e.g. 58"
               value={age}
               onChange={(e) => setAge(e.target.value)}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Gender *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Gender *</label>
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value as any)}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             >
               <option value="Female">Female</option>
               <option value="Male">Male</option>
@@ -130,7 +129,7 @@ export default function PatientRegistrationPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Diabetes Duration (Years) *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Diabetes duration (years) *</label>
             <input
               type="number"
               required
@@ -138,18 +137,18 @@ export default function PatientRegistrationPage() {
               placeholder="e.g. 8"
               value={diabetesDurationYears}
               onChange={(e) => setDiabetesDurationYears(e.target.value)}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Contact Number (Optional)</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Contact number (optional)</label>
             <input
               type="tel"
               placeholder="e.g. +91 98765 43210"
               value={contactNumber}
               onChange={(e) => setContactNumber(e.target.value)}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 font-mono text-ink-900"
             />
           </div>
         </div>
@@ -157,7 +156,7 @@ export default function PatientRegistrationPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-3 px-6 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 px-6 bg-petrol-600 hover:bg-[#0c595c] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
           {submitting ? (
             <>
@@ -166,7 +165,7 @@ export default function PatientRegistrationPage() {
             </>
           ) : (
             <>
-              <span>Continue to Screening</span>
+              <span>Continue to screening</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}

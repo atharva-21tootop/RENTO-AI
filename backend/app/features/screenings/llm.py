@@ -52,15 +52,16 @@ _PRECAUTIONS = {
 def generate_ai_explanation(screening: Dict) -> Dict:
     prediction = screening.get("prediction") or {}
     risk = screening.get("risk") or {}
-    grade = prediction.get("grade", 0)
-    grade_label = prediction.get("label", f"Grade {grade}")
-    confidence = prediction.get("confidence")
+    grade = 0
+    if isinstance(prediction, dict):
+        grade = prediction.get("grade", 0)
+    grade_label = prediction.get("label", f"Grade {grade}") if isinstance(prediction, dict) else f"Grade {grade}"
 
-    context = _build_context(screening, prediction, risk)
     if not GEMINI_API_KEY:
         return _fallback(grade, grade_label, risk, reason="no API key")
 
     try:
+        context = _build_context(screening, prediction, risk)
         text = _call_gemini(_build_prompt(context))
         data = json.loads(text)
         explanation = str(data.get("explanation", "")).strip()
@@ -75,7 +76,7 @@ def generate_ai_explanation(screening: Dict) -> Dict:
         }
     except Exception as e:
         logger.warning(f"gemini explanation failed ({e}); using template fallback")
-        return _fallback(grade, grade_label, risk, reason="llm error")
+        return _fallback(grade, grade_label, risk, reason=f"llm error: {e}")
 
 
 def _build_context(screening: Dict, prediction: Dict, risk: Dict) -> str:
@@ -87,12 +88,26 @@ def _build_context(screening: Dict, prediction: Dict, risk: Dict) -> str:
         parts.append(f"Patient: {patient}" + (f", age {age}" if age else ""))
     if diabetes is not None:
         parts.append(f"Diabetes duration: {diabetes} years")
-    parts.append(f"DR grade: {prediction.get('label', prediction.get('grade'))}")
-    if prediction.get("confidence") is not None:
-        parts.append(f"Model confidence: {float(prediction['confidence']) * 100:.0f}%")
-    parts.append(f"Risk: {risk.get('label', risk.get('level'))}")
-    if risk.get("action_required"):
-        parts.append(f"Clinical action: {risk['action_required']}")
+
+    if isinstance(prediction, dict):
+        parts.append(f"DR grade: {prediction.get('label', prediction.get('grade'))}")
+        if prediction.get("confidence") is not None:
+            try:
+                conf_val = float(prediction["confidence"])
+                conf_pct = conf_val * 100 if conf_val <= 1.0 else conf_val
+                parts.append(f"Model confidence: {conf_pct:.0f}%")
+            except (ValueError, TypeError):
+                pass
+    elif isinstance(prediction, str):
+        parts.append(f"DR grade: {prediction}")
+
+    if isinstance(risk, dict):
+        parts.append(f"Risk: {risk.get('label', risk.get('level'))}")
+        if risk.get("action_required"):
+            parts.append(f"Clinical action: {risk['action_required']}")
+    elif isinstance(risk, str):
+        parts.append(f"Risk: {risk}")
+
     return "; ".join(parts)
 
 
@@ -125,7 +140,9 @@ def _call_gemini(prompt: str) -> str:
 
 
 def _fallback(grade: int, grade_label: str, risk: Dict, reason: str) -> Dict:
-    action = risk.get("action_required", "Consult your doctor for the next steps.")
+    action = "Consult your doctor for the next steps."
+    if isinstance(risk, dict):
+        action = risk.get("action_required", action)
     explanation = (
         f"Your retinal screening shows {grade_label}. This is an AI-assisted finding, "
         f"not a final diagnosis. {action} "

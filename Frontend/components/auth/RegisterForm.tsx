@@ -79,26 +79,25 @@ export default function RegisterForm() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
       {error && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5 font-medium">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+        <div className="p-4 rounded-xl bg-saffron-500/10 border border-saffron-500/30 text-[#B36615] text-xs flex items-center gap-2.5 font-medium">
+          <AlertCircle className="w-4 h-4 text-saffron-500 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* SECTION 1: ACCOUNT INFORMATION */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <User className="w-5 h-5 text-teal-600" />
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Account Information
+        {/* SECTION 1: Account information */}
+        <div className="bg-paper-0 p-6 rounded-xl border border-line-200 space-y-4">
+          <div className="border-l-[3px] border-petrol-600 pl-3 py-0.5">
+            <h2 className="text-sm font-bold text-ink-900">
+              Account information
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="name" className="block text-xs font-bold text-slate-700 mb-1">
-                Full Name *
+              <label htmlFor="name" className="block text-xs font-semibold text-ink-900 mb-1">
+                Full name *
               </label>
               <div className="relative">
                 <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -111,15 +110,15 @@ export default function RegisterForm() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g. Dr. Ramesh Kumar"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
                 />
               </div>
               {fieldErrors.name && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.name}</p>}
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-xs font-bold text-slate-700 mb-1">
-                Email Address *
+              <label htmlFor="email" className="block text-xs font-semibold text-ink-900 mb-1">
+                Email address *
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -132,14 +131,14 @@ export default function RegisterForm() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="healthworker@phc.gov.in"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
                 />
               </div>
               {fieldErrors.email && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.email}</p>}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-bold text-slate-700 mb-1">
+              <label htmlFor="password" className="block text-xs font-semibold text-ink-900 mb-1">
                 Password *
               </label>
               <div className="relative">
@@ -153,15 +152,15 @@ export default function RegisterForm() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="At least 6 characters"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
                 />
               </div>
               {fieldErrors.password && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.password}</p>}
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-xs font-bold text-slate-700 mb-1">
-                Confirm Password *
+              <label htmlFor="confirmPassword" className="block text-xs font-semibold text-ink-900 mb-1">
+                Confirm password *
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -174,7 +173,7 @@ export default function RegisterForm() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Re-enter password"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
                 />
               </div>
               {fieldErrors.confirmPassword && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.confirmPassword}</p>}
@@ -182,19 +181,18 @@ export default function RegisterForm() {
           </div>
         </div>
 
-        {/* SECTION 2: PRIMARY HEALTH CENTRE INFORMATION */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Building2 className="w-5 h-5 text-teal-600" />
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Primary Health Centre Information
+        {/* SECTION 2: Primary Health Centre information */}
+        <div className="bg-paper-0 p-6 rounded-xl border border-line-200 space-y-4">
+          <div className="border-l-[3px] border-petrol-600 pl-3 py-0.5">
+            <h2 className="text-sm font-bold text-ink-900">
+              Primary Health Centre information
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="phcName" className="block text-xs font-bold text-slate-700 mb-1">
-                PHC Name *
+              <label htmlFor="phcName" className="block text-xs font-semibold text-ink-900 mb-1">
+                PHC name *
               </label>
               <input
                 id="phcName"
@@ -205,14 +203,14 @@ export default function RegisterForm() {
                 value={formData.phcName}
                 onChange={handleChange}
                 placeholder="e.g. Alandi Rural PHC"
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
               />
               {fieldErrors.phcName && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.phcName}</p>}
             </div>
 
             <div>
-              <label htmlFor="phcCode" className="block text-xs font-bold text-slate-700 mb-1">
-                PHC Code *
+              <label htmlFor="phcCode" className="block text-xs font-semibold text-ink-900 mb-1">
+                PHC code *
               </label>
               <input
                 id="phcCode"
@@ -223,13 +221,13 @@ export default function RegisterForm() {
                 value={formData.phcCode}
                 onChange={handleChange}
                 placeholder="e.g. PHC-MH-PN-042"
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono"
+                className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 font-mono"
               />
               {fieldErrors.phcCode && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.phcCode}</p>}
             </div>
 
             <div>
-              <label htmlFor="state" className="block text-xs font-bold text-slate-700 mb-1">
+              <label htmlFor="state" className="block text-xs font-semibold text-ink-900 mb-1">
                 State *
               </label>
               <input
@@ -241,13 +239,13 @@ export default function RegisterForm() {
                 value={formData.state}
                 onChange={handleChange}
                 placeholder="e.g. Maharashtra"
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
               />
               {fieldErrors.state && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.state}</p>}
             </div>
 
             <div>
-              <label htmlFor="district" className="block text-xs font-bold text-slate-700 mb-1">
+              <label htmlFor="district" className="block text-xs font-semibold text-ink-900 mb-1">
                 District *
               </label>
               <input
@@ -259,13 +257,13 @@ export default function RegisterForm() {
                 value={formData.district}
                 onChange={handleChange}
                 placeholder="e.g. Pune"
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
               />
               {fieldErrors.district && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.district}</p>}
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="address" className="block text-xs font-bold text-slate-700 mb-1">
+              <label htmlFor="address" className="block text-xs font-semibold text-ink-900 mb-1">
                 Address *
               </label>
               <textarea
@@ -277,14 +275,14 @@ export default function RegisterForm() {
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="Khed Taluka, Near Bus Stand, Alandi, Pune - 412105"
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600"
               />
               {fieldErrors.address && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.address}</p>}
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="contactNumber" className="block text-xs font-bold text-slate-700 mb-1">
-                Contact Phone Number *
+              <label htmlFor="contactNumber" className="block text-xs font-semibold text-ink-900 mb-1">
+                Contact phone number *
               </label>
               <input
                 id="contactNumber"
@@ -295,7 +293,7 @@ export default function RegisterForm() {
                 value={formData.contactNumber}
                 onChange={handleChange}
                 placeholder="+91 98230 11223"
-                className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono"
+                className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 font-mono"
               />
               {fieldErrors.contactNumber && <p className="text-[11px] text-rose-600 mt-1">{fieldErrors.contactNumber}</p>}
             </div>
@@ -307,7 +305,7 @@ export default function RegisterForm() {
           type="submit"
           disabled={isLoading}
           suppressHydrationWarning
-          className="w-full py-4 px-6 bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-3.5 px-6 bg-petrol-600 hover:bg-[#0c595c] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           {isLoading ? (
             <>
@@ -316,7 +314,7 @@ export default function RegisterForm() {
             </>
           ) : (
             <>
-              <span>Create PHC Account</span>
+              <span>Create PHC account</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}

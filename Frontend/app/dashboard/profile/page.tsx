@@ -13,17 +13,13 @@ export default async function ProfilePage() {
   const user = session.user;
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-8">
       {/* Header */}
-      <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20 mb-2">
-          <User className="w-3.5 h-3.5" />
-          <span>Patient Account</span>
-        </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          User Profile
+      <div className="border-l-[3px] border-petrol-600 pl-3 py-0.5">
+        <h1 className="text-2xl font-bold text-ink-900 tracking-tight">
+          User profile
         </h1>
-        <p className="text-sm text-zinc-400 max-w-xl mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Manage your account settings, authenticated identity, and healthcare screening preferences.
         </p>
       </div>
@@ -32,22 +28,22 @@ export default async function ProfilePage() {
       <UserProfile user={user} />
 
       {/* Security & Health Record Privacy Banner */}
-      <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
-        <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+      <div className="p-6 rounded-xl bg-paper-0 border border-line-200 space-y-3">
+        <div className="flex items-center gap-2 text-petrol-600 font-bold text-sm">
           <ShieldCheck className="w-5 h-5" />
           <span>Health Record Privacy & Authentication Security</span>
         </div>
-        <p className="text-xs text-zinc-400 leading-relaxed">
+        <p className="text-xs text-slate-600 leading-relaxed">
           Your account is secured with backend-issued JWT sessions and MongoDB document protection. All health screening logs are protected and anonymized before being computed into community health insights.
         </p>
 
-        <div className="pt-3 border-t border-zinc-800/80 flex flex-wrap gap-4 text-xs text-zinc-400">
+        <div className="pt-3 border-t border-line-200 flex flex-wrap gap-4 text-xs text-slate-600">
           <div className="flex items-center gap-1.5">
-            <HeartPulse className="w-3.5 h-3.5 text-emerald-400" />
+            <HeartPulse className="w-3.5 h-3.5 text-petrol-600" />
             <span>Health Screening ID: Active</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-petrol-600" />
             <span>OAuth & Password Security: Verified</span>
           </div>
         </div>

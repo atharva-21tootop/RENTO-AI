@@ -85,7 +85,7 @@ function toImageQuality(raw: Record<string, unknown> | null): ImageQualityCheck 
   }
   const checks = (raw.checks as Record<string, boolean>) || {};
   return {
-    status: (raw.status as "good" | "insufficient") || "insufficient",
+    status: (raw.status === "good" ? "good" : "insufficient"),
     score: Math.round(((raw.score as number) || 0) * 100),
     checks: {
       resolution: checks.resolution ?? false,

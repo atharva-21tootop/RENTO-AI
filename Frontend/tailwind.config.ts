@@ -10,9 +10,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Public-site design tokens (design.md §2). Distinct names so they never
-        // collide with the default Tailwind palette the dashboard still uses
-        // (e.g. teal-600, slate-*, emerald-*). Do NOT override shared palettes.
+        petrol: {
+          900: '#0B3A3F',
+          600: '#0F6E71',
+        },
+        saffron: {
+          500: '#E08A2C',
+        },
+        ink: {
+          900: '#12181A',
+        },
+        mist: {
+          100: '#F3F6F5',
+        },
+        paper: {
+          0: '#FFFFFF',
+        },
+        line: {
+          200: '#DDE5E3',
+        },
+        // Public-site design tokens
         navy: {
           DEFAULT: '#071A2B',
           surface: '#0D2638',
@@ -21,11 +38,6 @@ const config: Config = {
         vision: '#4DE8FF', // Vision Cyan
         honey: '#FFCA6B', // Soft Amber
         snow: '#F7FAFC', // Soft White
-        ink: {
-          DEFAULT: '#102A43', // text-primary
-          soft: '#526777', // text-secondary
-          muted: '#8295A5', // text-muted
-        },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],

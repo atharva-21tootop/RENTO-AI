@@ -107,6 +107,8 @@ def quality_check_endpoint(screening_id: str, user: dict = Depends(get_current_u
 
 @router.post("/{screening_id}/analyze")
 def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
+    from .quality import assess_image_quality
+
     screening = get_screening(screening_id)
     if not screening:
         raise HTTPException(status_code=404, detail={"code": "SCREENING_NOT_FOUND", "message": "Screening not found"})
@@ -116,6 +118,26 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
     image_abs = image_path_to_abs(screening["image_path"])
     if not image_abs or not os.path.exists(image_abs):
         raise HTTPException(status_code=422, detail={"code": "IMAGE_MISSING", "message": "Image file missing on server"})
+
+    # Run quality assessment before AI processing
+    quality = assess_image_quality(screening["image_path"])
+    quality_status = "quality_failed" if quality["status"] == "poor" else "ai_processing"
+    update_screening(screening_id, {"image_quality": quality, "status": quality_status})
+
+    if quality["status"] != "good":
+        # Quality insufficient — return quality result without running AI model
+        result_payload = {
+            "screening_id": screening_id,
+            "patient_id": screening["patient_id"],
+            "eye": screening["eye"],
+            "status": "quality_failed",
+            "image_url": screening.get("image_url"),
+            "image_quality": quality,
+            "prediction": None,
+            "explanation": None,
+            "risk": None,
+        }
+        return _enrich_screening(result_payload)
 
     update_screening(screening_id, {"status": "ai_processing"})
 
@@ -170,7 +192,7 @@ def analyze_endpoint(screening_id: str, user: dict = Depends(get_current_user)):
         "eye": screening["eye"],
         "status": "completed",
         "image_url": screening.get("image_url"),
-        "image_quality": screening.get("image_quality"),
+        "image_quality": quality,
         "prediction": prediction,
         "explanation": {"heatmap_url": heatmap_url},
         "risk": risk,

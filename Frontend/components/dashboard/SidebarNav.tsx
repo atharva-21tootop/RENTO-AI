@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Eye,
@@ -10,10 +9,8 @@ import {
   History,
   FileText,
   Building2,
-  LogOut,
-  ChevronRight,
-  ShieldCheck,
 } from 'lucide-react';
+import { useDrawer } from './DashboardShell';
 
 interface SidebarNavProps {
   user?: {
@@ -21,78 +18,61 @@ interface SidebarNavProps {
     email?: string | null;
     image?: string | null;
   };
-  onCloseMobile?: () => void;
 }
 
-export default function SidebarNav({ user, onCloseMobile }: SidebarNavProps) {
+export default function SidebarNav({ user }: SidebarNavProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { toggleDrawer } = useDrawer();
 
   const navItems = [
     {
-      name: 'PHC Dashboard',
+      name: 'PHC dashboard',
       href: '/dashboard',
       icon: LayoutDashboard,
-      badge: null,
     },
     {
-      name: 'New Screening',
+      name: 'New screening',
       href: '/dashboard/screening/new',
       icon: Eye,
-      badge: 'AI Screening',
     },
     {
       name: 'Patients',
       href: '/dashboard/patients',
       icon: Users,
-      badge: null,
     },
     {
-      name: 'Screening History',
+      name: 'Screening history',
       href: '/dashboard/screenings',
       icon: History,
-      badge: null,
     },
     {
-      name: 'Screening Reports',
+      name: 'Screening reports',
       href: '/dashboard/reports',
       icon: FileText,
-      badge: null,
     },
     {
-      name: 'PHC Profile & Settings',
+      name: 'PHC profile & settings',
       href: '/dashboard/phc',
       icon: Building2,
-      badge: null,
     },
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-100 border-r border-slate-800 flex flex-col justify-between h-full select-none">
-      {/* Top Header Branding */}
-      <div>
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <Link href="/dashboard" onClick={onCloseMobile} className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/30 group-hover:scale-105 transition-transform">
-              <Eye className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-extrabold text-base text-white tracking-tight leading-tight block">
-                Netra<span className="text-teal-400">Care</span>
-              </span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                PHC DR Screening AI
-              </span>
-            </div>
-          </Link>
-        </div>
+    <aside className="w-[64px] bg-petrol-900 text-slate-100 border-r border-line-200 flex flex-col justify-between items-center py-4 h-full select-none shrink-0">
+      <div className="flex flex-col items-center gap-6 w-full">
+        {/* Logo & Drawer Toggle Icon */}
+        <button
+          type="button"
+          onClick={toggleDrawer}
+          title="Expand navigation drawer"
+          aria-label="Expand navigation drawer"
+          className="w-10 h-10 rounded-xl bg-petrol-600 text-white flex items-center justify-center border border-white/10 hover:scale-105 transition-transform cursor-pointer shadow-xs"
+        >
+          <Eye className="w-5 h-5" />
+        </button>
 
-        {/* Navigation Items */}
-        <nav className="p-3 space-y-1">
-          <div className="px-3 py-2 text-[10px] uppercase font-mono tracking-widest text-slate-400 font-bold">
-            Main Navigation
-          </div>
+        {/* Icon Navigation Links */}
+        <nav className="flex flex-col items-center gap-2 w-full px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -104,68 +84,34 @@ export default function SidebarNav({ user, onCloseMobile }: SidebarNavProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={onCloseMobile}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg font-medium text-sm transition-all group ${
+                title={item.name}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all group relative ${
                   isActive
-                    ? 'bg-teal-600/20 text-teal-300 border border-teal-500/30 font-semibold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                    ? 'bg-white/10 text-teal-300 border-l-2 border-petrol-600 font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon
-                    className={`w-4 h-4 transition-colors ${
-                      isActive ? 'text-teal-400' : 'text-slate-400 group-hover:text-slate-200'
-                    }`}
-                  />
-                  <span>{item.name}</span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {item.badge && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                      {item.badge}
-                    </span>
-                  )}
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-teal-400" />}
-                </div>
+                <Icon className={`w-5 h-5 ${isActive ? 'text-teal-300' : 'group-hover:text-slate-200'}`} />
+                {/* Tooltip */}
+                <span className="absolute left-full ml-3 px-2.5 py-1 bg-petrol-900 text-white text-xs rounded-md shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap border border-white/10">
+                  {item.name}
+                </span>
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* Footer User Info & Sign Out */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/40">
-        <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-teal-600/30 border border-teal-500/40 text-teal-300 flex items-center justify-center font-bold text-xs shrink-0">
-              {user?.name ? user.name[0].toUpperCase() : 'W'}
-            </div>
-            <div className="overflow-hidden">
-              <div className="text-xs font-semibold text-white truncate">
-                {user?.name || 'Healthcare Worker'}
-              </div>
-              <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-teal-400 shrink-0" />
-                <span>Authenticated</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={async () => {
-              setIsLoggingOut(true);
-              await fetch('/api/backend/auth/logout', { method: 'POST' }).catch(() => {});
-              router.push('/login');
-              router.refresh();
-            }}
-            disabled={isLoggingOut}
-            title={isLoggingOut ? 'Signing out...' : 'Sign Out'}
-            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+      {/* User Initials Avatar at bottom */}
+      <div className="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={toggleDrawer}
+          title={user?.name || 'Healthcare Worker'}
+          className="w-9 h-9 rounded-full bg-petrol-600 border border-white/20 text-white flex items-center justify-center font-bold text-xs cursor-pointer hover:ring-2 hover:ring-teal-400 transition-all"
+        >
+          {user?.name ? user.name[0].toUpperCase() : 'W'}
+        </button>
       </div>
     </aside>
   );

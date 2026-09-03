@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Mail, Lock, AlertCircle, Code2, ArrowRight } from 'lucide-react';
+import { Loader2, Mail, Lock, AlertCircle, Eye, ArrowRight } from 'lucide-react';
 import { loginSchema } from '@/lib/validations';
 
 export default function LoginForm() {
@@ -83,30 +83,37 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 shadow-xl">
+    <div className="w-full max-w-md bg-paper-0 border border-line-200 rounded-2xl p-8">
       {/* Header & Logo */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 mb-4 border border-emerald-500/20">
-          <Code2 className="w-6 h-6" />
+      <div className="mb-8">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-petrol-600 text-white mb-3 shadow-xs">
+          <Eye className="w-5 h-5" />
         </div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
-          Welcome Back
+        <h1 className="text-2xl font-bold text-ink-900 tracking-tight">
+          Sign in to NetraCare
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Sign in to access your Health Screening Assistant workspace
+        <p className="text-xs text-slate-500 mt-1">
+          PHC Diabetic Retinopathy Screening Assistant
         </p>
+
+        {/* Tricolor Accent Line (NPCB/NPDR National Program Nod) */}
+        <div className="flex h-0.5 w-16 my-3 rounded-full overflow-hidden">
+          <span className="w-1/3 bg-[#FF9933]" />
+          <span className="w-1/3 bg-white" />
+          <span className="w-1/3 bg-[#138808]" />
+        </div>
       </div>
 
       {/* Success Alert */}
       {successMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm flex items-start gap-3">
+        <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-3">
           <span>{successMessage}</span>
         </div>
       )}
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm flex flex-col gap-2">
+        <div className="mb-6 p-4 rounded-xl bg-saffron-500/10 border border-saffron-500/30 text-[#B36615] text-xs flex flex-col gap-2">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
@@ -114,9 +121,9 @@ export default function LoginForm() {
           {errorMessage.toLowerCase().includes('verify your email') && (
             <Link
               href={`/verify-email?email=${encodeURIComponent(formData.email)}`}
-              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline self-end"
+              className="text-xs font-semibold text-petrol-600 hover:underline self-end"
             >
-              Verify Email Now →
+              Verify Email Now &rarr;
             </Link>
           )}
         </div>
@@ -127,12 +134,12 @@ export default function LoginForm() {
         <div>
           <label
             htmlFor="email"
-            className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5"
+            className="block text-xs font-semibold text-ink-900 mb-1"
           >
-            Email Address
+            Email address
           </label>
           <div className="relative">
-            <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               id="email"
               name="email"
@@ -143,28 +150,28 @@ export default function LoginForm() {
               value={formData.email}
               onChange={handleChange}
               placeholder="you@example.com"
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-lg text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-mist-100/50 border border-line-200 rounded-lg text-sm text-ink-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 transition-all"
             />
           </div>
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-1">
             <label
               htmlFor="password"
-              className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+              className="block text-xs font-semibold text-ink-900"
             >
               Password
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="text-xs font-semibold text-petrol-600 hover:underline"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               id="password"
               name="password"
@@ -175,7 +182,7 @@ export default function LoginForm() {
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-lg text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-mist-100/50 border border-line-200 rounded-lg text-sm text-ink-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 transition-all"
             />
           </div>
         </div>
@@ -184,7 +191,7 @@ export default function LoginForm() {
           type="submit"
           disabled={isLoading}
           suppressHydrationWarning
-          className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-petrol-600 hover:bg-[#0c595c] text-white text-sm font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-petrol-600 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
         >
           {isLoading ? (
             <>
@@ -200,15 +207,14 @@ export default function LoginForm() {
         </button>
       </form>
 
-      {/* Divider */}
       {/* Footer Link */}
-      <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-8 text-center text-xs text-slate-500">
         Don&apos;t have an account?{' '}
         <Link
           href="/register"
-          className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+          className="font-semibold text-petrol-600 hover:underline"
         >
-          Create Account
+          Create account
         </Link>
       </p>
     </div>

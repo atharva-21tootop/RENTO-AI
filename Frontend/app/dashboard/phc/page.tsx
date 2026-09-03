@@ -56,14 +56,15 @@ export default function PHCProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
-      <div className="pb-4 border-b border-slate-200">
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-teal-600" />
-          <span>PHC Profile & Settings</span>
-        </h1>
-        <p className="text-xs text-slate-500">
+      <div className="pb-4 border-b border-line-200">
+        <div className="border-l-[3px] border-petrol-600 pl-3 py-0.5">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight flex items-center gap-2">
+            <span>PHC profile & settings</span>
+          </h1>
+        </div>
+        <p className="text-xs text-slate-500 mt-1 pl-3">
           View and update institutional information for your associated Primary Health Centre.
         </p>
       </div>
@@ -75,97 +76,97 @@ export default function PHCProfilePage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+      <form onSubmit={handleSubmit} className="bg-paper-0 p-6 rounded-xl border border-line-200 space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">PHC Name *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">PHC name *</label>
             <input
               type="text"
               required
               value={profile.name}
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">PHC Institutional Code *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">PHC institutional code *</label>
             <input
               type="text"
               required
               value={profile.code}
               onChange={(e) => setProfile({ ...profile, code: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono uppercase"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 font-mono uppercase text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">State *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">State *</label>
             <input
               type="text"
               required
               value={profile.state}
               onChange={(e) => setProfile({ ...profile, state: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">District *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">District *</label>
             <input
               type="text"
               required
               value={profile.district}
               onChange={(e) => setProfile({ ...profile, district: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="sm:col-span-2 space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Full Address *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Full address *</label>
             <textarea
               rows={2}
               required
               value={profile.address}
               onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Contact Phone Number *</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Contact phone number *</label>
             <input
               type="tel"
               required
               value={profile.contactNumber}
               onChange={(e) => setProfile({ ...profile, contactNumber: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 font-mono text-ink-900"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700">Healthcare Worker / CHO Name</label>
+            <label className="block text-xs font-semibold text-ink-900 mb-1">Healthcare worker / CHO name</label>
             <input
               type="text"
               value={profile.healthcareWorkerName || ''}
               onChange={(e) => setProfile({ ...profile, healthcareWorkerName: e.target.value })}
-              className="w-full p-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full p-2.5 text-sm bg-mist-100/50 border border-line-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-petrol-600/20 focus:border-petrol-600 text-ink-900"
             />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
+        <div className="p-3.5 rounded-lg bg-mist-100 border border-line-200 text-xs text-slate-600 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-petrol-600 shrink-0" />
           <span>PHC credentials and institutional code are attached to all generated AI screening reports.</span>
         </div>
 
         <button
           type="submit"
           disabled={saving}
-          className="w-full py-3.5 px-6 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+          className="w-full py-3.5 px-6 bg-petrol-600 hover:bg-[#0c595c] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          <span>{saving ? 'Saving Changes...' : 'Save Changes'}</span>
+          <span>{saving ? 'Saving changes...' : 'Save changes'}</span>
         </button>
       </form>
     </div>
