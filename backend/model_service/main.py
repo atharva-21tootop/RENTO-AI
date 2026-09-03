@@ -26,9 +26,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 import numpy as np
+from contextlib import asynccontextmanager
 
-# Lazy heavy imports inside request handlers keep startup light; the model is
-# cached after the first /predict so RAM stays flat after warm-up.
+# Model + device are loaded ONCE at startup (lifespan), NOT per-request. The
+# first /predict would otherwise import torch (192MB) + load the model (203MB)
+# + run GradCAM all at once, spiking past the 512Mi free-tier ceiling and being
+# OOM-killed. Preloading at startup also fails the deploy loudly if it won't fit.
 _model = None
 _device = None
 
@@ -38,13 +41,8 @@ class PredictRequest(BaseModel):
     screening_id: str = ""
 
 
-app = FastAPI(title="NetraCare Model Service")
-
-
-def get_model():
+def _load_model():
     global _model, _device
-    if _model is not None:
-        return _model, _device
     import torch
     from model import create_model
 
@@ -52,6 +50,18 @@ def get_model():
     _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = BACKEND_DIR / "app" / "model" / "checkpoints" / "best_model.pth"
     _model = create_model(checkpoint_path=str(ckpt)).to(_device).eval()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _load_model()
+    yield
+
+
+app = FastAPI(title="NetraCare Model Service", lifespan=lifespan)
+
+
+def get_model():
     return _model, _device
 
 
